@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Completo de Controle de Modems</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon">
+                <i class="fas fa-satellite-dish"></i>
+            </div>
+            <div class="logo-text">ModemControl Pro</div>
+        </div>
+        
+        <ul class="nav-menu">
+            <li class="nav-item">
+                <a href="#" id="nav-dashboard" class="nav-link active">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" id="nav-calendar" class="nav-link">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Calendário</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" id="nav-models" class="nav-link">
+                    <i class="fas fa-wifi"></i>
+                    <span>Modelos</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" id="nav-reports" class="nav-link">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Relatórios</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" id="nav-tasks" class="nav-link">
+                    <i class="fas fa-tasks"></i>
+                    <span>Tarefas</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" id="nav-alerts" class="nav-link">
+                    <i class="fas fa-bell"></i>
+                    <span>Alertas</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="#" id="nav-settings" class="nav-link">
+                    <i class="fas fa-cog"></i>
+                    <span>Configurações</span>
+                </a>
+            </li>
+        </ul>
+        
+        <div class="sidebar-footer">
+            <div class="system-status">
+                <div class="status-indicator"></div>
+                <div class="status-text">Sistema Operacional</div>
+            </div>
+            <div class="card quick-tip-card">
+                <h3 class="quick-tip-title">
+                    <i class="fas fa-lightbulb"></i> Dica Rápida
+                </h3>
+                <p class="quick-tip-text">
+                    Use os filtros avançados para encontrar registros específicos rapidamente.
+                </p>
+            </div>
+        </div>
+    </aside>
+    
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <button class="menu-toggle" aria-label="Alternar menu lateral">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h1 class="header-title">Dashboard de Produção</h1>
+        </div>
+        
+        <div class="search-bar">
+            <i class="fas fa-search"></i>
+            <input type="text" placeholder="Pesquisar registros..." id="global-search">
+        </div>
+        
+        <div class="header-controls">
+            <div class="header-icons">
+                <div class="icon-btn" id="notifications-btn">
+                    <i class="fas fa-bell"></i>
+                    <div class="badge">3</div>
+                </div>
+                <div class="icon-btn">
+                    <i class="fas fa-envelope"></i>
+                    <div class="badge">5</div>
+                </div>
+                <div class="icon-btn" id="settings-btn">
+                    <i class="fas fa-cog"></i>
+                </div>
+            </div>
+            
+            <div class="user-menu-container">
+                <div class="user-menu">
+                    <div class="user-avatar">AD</div>
+                    <div>Administrador</div>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="user-dropdown">
+                    <a href="#" class="dropdown-item"><i class="fas fa-user-circle"></i> Perfil</a>
+                    <a href="#" id="logout-btn" class="dropdown-item"><i class="fas fa-sign-out-alt"></i> Sair</a>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Main Content -->
+    <div class="container">
+        
+        <!-- =================================================================== -->
+        <!-- VIEW: DASHBOARD -->
+        <!-- =================================================================== -->
+        <div id="view-dashboard" class="page-view active-view">
+            <h2 class="page-title">
+                <i class="fas fa-tachometer-alt"></i>
+                Controle de Gravação de Modems
+            </h2>
+            
+            <div class="tabs">
+                <div class="tab active" data-tab="overview">Visão Geral</div>
+                <div class="tab" data-tab="production">Produção</div>
+                <div class="tab" data-tab="reports-summary">Relatórios</div>
+                <div class="tab" data-tab="alerts-summary">Alertas</div>
+            </div>
+            
+            <!-- Tab Content: Visão Geral -->
+            <div id="tab-overview" class="tab-content active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Total de Gravações</div>
+                        <div class="stat-value" id="total-count">0</div>
+                        <div class="details-text">
+                            <i class="fas fa-arrow-up arrow-up-success"></i> 15% no último mês
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Modelos Cadastrados</div>
+                        <div class="stat-value" id="model-count-stat">11</div>
+                        <div class="details-text">
+                            <i class="fas fa-sync-alt sync-alt-accent"></i> Atualizado hoje
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Gravações Hoje</div>
+                        <div class="stat-value" id="today-count">0</div>
+                        <div class="progress-container">
+                            <div class="progress-header">
+                                <span>Meta: 50</span>
+                                <span id="progress-percent">0%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill daily-progress-bar" id="daily-progress"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Eficiência</div>
+                        <div class="stat-value">87%</div>
+                        <div class="details-text">
+                            <i class="fas fa-chart-line chart-line-accent"></i> Melhorando
+                        </div>
+                    </div>
+                </div>
+                 <div class="card">
+                    <div class="card-title">
+                        <i class="fas fa-chart-line"></i> 
+                        <div>Desempenho de Produção</div>
+                        <div class="chart-controls">
+                            <select id="chart-range" aria-label="Selecionar período do gráfico" class="chart-range-select">
+                                <option value="7">Últimos 7 dias</option>
+                                <option value="30">Últimos 30 dias</option>
+                                <option value="90">Últimos 3 meses</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="performance-chart" class="chart-container"></div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Produção -->
+            <div id="tab-production" class="tab-content">
+                 <div class="dashboard">
+                    <div class="card">
+                        <h2 class="card-title"><i class="fas fa-plus-circle"></i> Novo Registro</h2>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="date">Data da Gravação</label>
+                                <div class="input-with-icon">
+                                    <i class="fas fa-calendar"></i>
+                                    <input type="date" id="date" value="">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="quantity">Quantidade</label>
+                                <div class="input-with-icon">
+                                    <i class="fas fa-calculator"></i>
+                                    <input type="number" id="quantity" min="1" value="1" placeholder="Qtd">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group model-list-container">
+                            <label for="model"><i class="fas fa-wifi"></i> Modelo do Modem</label>
+                            
+                            <div class="model-filters">
+                                <button class="filter-btn active smooth-transition" data-filter="all">Todos</button>
+                                <button class="filter-btn smooth-transition" data-filter="Huawei">Huawei</button>
+                                <button class="filter-btn smooth-transition" data-filter="Nokia">Nokia</button>
+                            </div>
+                            
+                            <div class="search-container">
+                                <input type="text" id="search-model" placeholder="Pesquisar modelo..." autocomplete="off">
+                                <button id="search-btn" aria-label="Pesquisar modelo"><i class="fas fa-search"></i></button>
+                            </div>
+                            
+                            <select id="model" size="8" class="full-width-select">
+                                <!-- Modelos serão preenchidos via JavaScript -->
+                            </select>
+                            
+                            <div class="sort-options">
+                                <span class="sort-label">Ordenar por:</span>
+                                <select id="sort-models" aria-label="Ordenar modelos por" class="sort-models-select">
+                                    <option value="name">Nome</option>
+                                    <option value="manufacturer">Fabricante</option>
+                                </select>
+                            </div>
+                            
+                            <div class="model-list-info" id="model-count">Total: 11 modelos</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="notes">Observações</label>
+                            <div class="input-with-icon">
+                                <i class="fas fa-sticky-note"></i>
+                                <textarea id="notes" rows="3" placeholder="Adicione observações sobre a gravação..."></textarea>
+                            </div>
+                        </div>
+                        
+                        <button id="add-btn" class="full-width-button">
+                            <i class="fas fa-save"></i> Registrar Gravação
+                        </button>
+                    </div>
+
+                    <div class="card">
+                        <h2 class="card-title"><i class="fas fa-list"></i> Últimas Gravações</h2>
+                         <div class="modem-list" id="records-list">
+                            <div class="empty-state">
+                                <i class="fas fa-calendar-day"></i>
+                                <p>Nenhuma gravação registrada</p>
+                            </div>
+                        </div>
+                    </div>
+                     <div class="card">
+                        <h2 class="card-title"><i class="fas fa-calculator"></i> Planejamento Diário</h2>
+                        <div class="form-group">
+                            <label for="planning-model-select">Selecione um modelo para planejar</label>
+                            <select id="planning-model-select">
+                                <option value="">-- Escolha um modelo --</option>
+                            </select>
+                        </div>
+                        <div id="planning-result" class="empty-state planning-result-placeholder">
+                            <i class="fas fa-hourglass-start"></i>
+                            <p>Selecione um modelo para ver o potencial de gravação diário.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Relatórios -->
+            <div id="tab-reports-summary" class="tab-content">
+                <div class="card">
+                    <h2 class="card-title"><i class="fas fa-chart-pie"></i> Distribuição por Fabricante</h2>
+                    <div id="manufacturer-chart" class="chart-container"></div>
+                </div>
+            </div>
+
+            <!-- Tab Content: Alertas -->
+            <div id="tab-alerts-summary" class="tab-content">
+                <div class="empty-state">
+                    <i class="fas fa-bell-slash"></i>
+                    <p>Nenhum alerta novo no momento.</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- VIEW: CALENDÁRIO -->
+        <!-- =================================================================== -->
+        <div id="view-calendar" class="page-view">
+             <div class="card">
+                <h2 class="card-title"><i class="fas fa-calendar-alt"></i> Calendário de Gravações</h2>
+                <div class="calendar-header">
+                    <h3 id="current-month">Junho 2025</h3>
+                    <div class="calendar-navigation">
+                        <button id="prev-month" class="smooth-transition"><i class="fas fa-chevron-left"></i> Anterior</button>
+                        <button id="today" class="smooth-transition">Hoje</button>
+                        <button id="next-month" class="smooth-transition">Próximo <i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+                
+                <div class="calendar">
+                    <div class="calendar-day-header">Dom</div>
+                    <div class="calendar-day-header">Seg</div>
+                    <div class="calendar-day-header">Ter</div>
+                    <div class="calendar-day-header">Qua</div>
+                    <div class="calendar-day-header">Qui</div>
+                    <div class="calendar-day-header">Sex</div>
+                    <div class="calendar-day-header">Sáb</div>
+                    <!-- Dias serão preenchidos via JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- VIEW: MODELOS -->
+        <!-- =================================================================== -->
+        <div id="view-models" class="page-view">
+            <h2 class="page-title"><i class="fas fa-wifi"></i> Gestão de Modelos</h2>
+            <div class="dashboard">
+                <div class="card card-highlight">
+                    <h2 class="card-title"><i class="fas fa-plus-circle"></i> Adicionar Novo Modelo</h2>
+                    <div class="form-group">
+                        <label for="new-model-product">Nome do Produto</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-tag"></i>
+                            <input type="text" id="new-model-product" placeholder="Ex: ONU Huawei EG8145V5">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-model-name">Nome do Modelo</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-network-wired"></i>
+                            <input type="text" id="new-model-name" placeholder="Ex: EG8145V5">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-model-manufacturer">Fabricante</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-industry"></i>
+                            <select id="new-model-manufacturer">
+                                <option value="Huawei">Huawei</option>
+                                <option value="Nokia">Nokia</option>
+                                <option value="TP-Link">TP-Link</option>
+                                <option value="Outro">Outro</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-model-time">Tempo de Gravação (min)</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-clock"></i>
+                            <input type="number" id="new-model-time" min="1" placeholder="Ex: 5">
+                        </div>
+                    </div>
+                    <button id="add-model-btn" class="full-width-button"><i class="fas fa-save"></i> Salvar Modelo</button>
+                </div>
+                <div class="card grid-col-span-2">
+                    <h2 class="card-title"><i class="fas fa-stream"></i> Modelos Cadastrados</h2>
+                    <div class="modem-list" id="models-list-container">
+                        <!-- A lista de modelos será renderizada aqui -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- =================================================================== -->
+        <!-- VIEW: RELATÓRIOS -->
+        <!-- =================================================================== -->
+        <div id="view-reports" class="page-view">
+            <div class="advanced-filters">
+                <div class="filter-header">
+                    <h3><i class="fas fa-filter"></i> Filtros Avançados</h3>
+                    <button id="reset-filters"><i class="fas fa-redo"></i> Limpar Filtros</button>
+                </div>
+                <div class="filter-body">
+                    <div class="form-group">
+                        <label for="filter-date"><i class="fas fa-calendar"></i> Data</label>
+                        <input type="date" id="filter-date">
+                    </div>
+                    <div class="form-group">
+                        <label for="filter-model"><i class="fas fa-wifi"></i> Modelo</label>
+                        <select id="filter-model">
+                            <option value="">Todos os modelos</option>
+                            <!-- Preenchido via JS -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="filter-manufacturer"><i class="fas fa-industry"></i> Fabricante</label>
+                        <select id="filter-manufacturer">
+                            <option value="">Todos os fabricantes</option>
+                            <option value="Huawei">Huawei</option>
+                            <option value="Nokia">Nokia</option>
+                            <option value="TP-Link">TP-Link</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="filter-quantity"><i class="fas fa-sort-numeric-up"></i> Quantidade Mínima</label>
+                        <input type="number" id="filter-quantity" min="1" placeholder="Ex: 10">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-list"></i> Gravações Filtradas</h2>
+                <div class="modem-list" id="records-list-reports">
+                     <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <p>Use os filtros para gerar um relatório.</p>
+                    </div>
+                </div>
+                
+                <div class="filtered-records-container">
+                    <div>
+                        <button id="export-pdf" class="btn-secondary">
+                            <i class="fas fa-file-pdf"></i> Exportar PDF
+                        </button>
+                        <button id="export-excel" class="btn-secondary">
+                            <i class="fas fa-file-excel"></i> Exportar Excel
+                        </button>
+                    </div>
+                    <div>
+                        <span class="filtered-count-info">Total: <span id="filtered-count">0</span> registros</span>
+                        <button id="clear-records" class="btn-delete">
+                            <i class="fas fa-trash"></i> Limpar Dados
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- =================================================================== -->
+        <!-- VIEW: TAREFAS -->
+        <!-- =================================================================== -->
+        <div id="view-tasks" class="page-view">
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-tasks"></i> Tarefas Pendentes</h2>
+                <div class="kanban-board">
+                    <div class="kanban-column">
+                        <div class="column-header">
+                            <div class="column-title">Para Fazer</div>
+                            <div class="column-count">3</div>
+                        </div>
+                        <div class="kanban-items">
+                            <div class="kanban-item">
+                                <div class="kanban-item-title">Gravar lotes Huawei</div>
+                                <div class="details-text">15 unidades - Prazo: Hoje</div>
+                            </div>
+                            <div class="kanban-item">
+                                <div class="kanban-item-title">Atualizar firmware</div>
+                                <div class="details-text">Modelos EG8145X6</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="kanban-column">
+                        <div class="column-header">
+                            <div class="column-title">Em Progresso</div>
+                            <div class="column-count">2</div>
+                        </div>
+                        <div class="kanban-items">
+                            <div class="kanban-item">
+                                <div class="kanban-item-title">Testar novos modelos</div>
+                                <div class="details-text">Nokia G-1425G-B</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="kanban-column">
+                        <div class="column-header">
+                            <div class="column-title">Concluído</div>
+                            <div class="column-count">5</div>
+                        </div>
+                        <div class="kanban-items">
+                            <div class="kanban-item">
+                                <div class="kanban-item-title">Envio para estoque</div>
+                                <div class="details-text">45 unidades</div>
+                            </div>
+                            <div class="kanban-item">
+                                <div class="kanban-item-title">Relatório mensal</div>
+                                <div class="details-text">Maio 2025</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button id="add-task" class="add-task-button">
+                    <i class="fas fa-plus"></i> Adicionar Tarefa
+                </button>
+            </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- VIEW: ALERTAS -->
+        <!-- =================================================================== -->
+        <div id="view-alerts" class="page-view">
+             <div class="card">
+                <h2 class="card-title"><i class="fas fa-bell"></i> Alertas e Notificações</h2>
+                <div id="alerts-list">
+                    <div class="alert-item alert-high">
+                        <div class="alert-priority"></div>
+                        <div>
+                            <div class="alert-message">Meta diária não atingida</div>
+                            <div class="alert-details">Faltam 15 gravações para atingir a meta</div>
+                        </div>
+                    </div>
+                    <div class="alert-item">
+                        <div class="alert-priority"></div>
+                        <div>
+                            <div class="alert-message">Novo modelo disponível</div>
+                            <div class="alert-details">Huawei AX1800 disponível para gravação</div>
+                        </div>
+                    </div>
+                    <div class="alert-item alert-low">
+                        <div class="alert-priority"></div>
+                        <div>
+                            <div class="alert-message">Atualização de sistema</div>
+                            <div class="alert-details">Versão 2.1 disponível para instalação</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- VIEW: CONFIGURAÇÕES -->
+        <!-- =================================================================== -->
+        <div id="view-settings" class="page-view">
+            <h2 class="page-title"><i class="fas fa-cog"></i> Configurações</h2>
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-sliders-h"></i> Preferências Gerais</h2>
+                <div class="form-group">
+                    <label for="daily-goal-input"><i class="fas fa-bullseye"></i> Meta Diária de Gravações</label>
+                    <input type="number" id="daily-goal-input" min="1" placeholder="Ex: 50">
+                </div>
+                <button id="save-settings-btn" class="btn-success"><i class="fas fa-save"></i> Salvar Preferências</button>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title"><i class="fas fa-database"></i> Gerenciamento de Dados</h2>
+                <p class="clear-data-warning">
+                    Atenção: As ações abaixo são irreversíveis. Use com cuidado.
+                </p>
+                <button id="clear-all-data-btn" class="btn-delete"><i class="fas fa-trash-alt"></i> Limpar TODOS os Dados</button>
+                 <p class="clear-data-description">
+                    Isso removerá todos os registros de gravação e a lista de modelos customizada. A aplicação voltará ao seu estado inicial.
+                </p>
+            </div>
+        </div>
+
+    </div>
+    
+    <footer>
+        <div>
+            <p>Sistema de Controle de Gravação de Modems &copy; 2025 | <span class="highlight" id="total-records">0</span> gravações registradas</p>
+            <p>Versão 3.0.0 | Última atualização: 25/06/2025</p>
+        </div>
+        <div class="footer-links">
+            <a href="#"><i class="fas fa-question-circle"></i> Ajuda</a>
+            <a href="#"><i class="fas fa-book"></i> Documentação</a>
+            <a href="#"><i class="fas fa-shield-alt"></i> Privacidade</a>
+        </div>
+    </footer>
+    
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <div>Gravação registrada com sucesso!</div>
+    </div>
+    
+    <!-- Modal de Edição de Modelo -->
+    <div class="modal" id="edit-model-modal">
+        <div class="modal-content">
+            <h3><i class="fas fa-edit"></i> Editar Modelo</h3>
+            <div class="form-group modal-form-group">
+                <label for="edit-model-product">Nome do Produto</label>
+                <div class="input-with-icon">
+                    <i class="fas fa-tag"></i>
+                    <input type="text" id="edit-model-product">
+                </div>
+            </div>
+            <div class="form-group modal-form-group">
+                <label for="edit-model-name">Nome do Modelo</label>
+                <div class="input-with-icon">
+                    <i class="fas fa-network-wired"></i>
+                    <input type="text" id="edit-model-name">
+                </div>
+            </div>
+            <div class="form-group modal-form-group">
+                <label for="edit-model-manufacturer">Fabricante</label>
+                <div class="input-with-icon">
+                    <i class="fas fa-industry"></i>
+                    <select id="edit-model-manufacturer">
+                        <option value="Huawei">Huawei</option>
+                        <option value="Nokia">Nokia</option>
+                        <option value="TP-Link">TP-Link</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group modal-form-group">
+                <label for="edit-model-time">Tempo de Gravação (min)</label>
+                <div class="input-with-icon">
+                    <i class="fas fa-clock"></i>
+                    <input type="number" id="edit-model-time" min="1">
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-secondary" id="cancel-edit-model">Cancelar</button>
+                <button class="btn-success" id="confirm-edit-model">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação -->
+    <div class="modal" id="confirmation-modal">
+        <div class="modal-content">
+            <h3><i class="fas fa-exclamation-triangle"></i> Confirmar Exclusão</h3>
+            <p>Tem certeza que deseja excluir este registro de gravação?</p>
+            <p>Esta ação não pode ser desfeita.</p>
+            <div class="modal-buttons">
+                <button class="btn-secondary" id="cancel-delete">Cancelar</button>
+                <button class="btn-delete" id="confirm-delete">Excluir</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal de Tarefa -->
+    <div class="task-modal" id="task-modal">
+        <div class="task-content">
+            <div class="modal-header task-modal-header">
+                <h2><i class="fas fa-tasks"></i> Nova Tarefa</h2>
+                <button id="close-task" aria-label="Fechar"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="form-group">
+                <label for="task-title"><i class="fas fa-heading"></i> Título da Tarefa</label>
+                <input type="text" id="task-title" placeholder="Digite o título da tarefa">
+            </div>
+            
+            <div class="form-group">
+                <label for="task-description"><i class="fas fa-align-left"></i> Descrição</label>
+                <textarea id="task-description" rows="3" placeholder="Descreva a tarefa..."></textarea>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="task-due"><i class="fas fa-calendar-day"></i> Data de Vencimento</label>
+                    <input type="date" id="task-due">
+                </div>
+                
+                <div class="form-group">
+                    <label for="task-priority"><i class="fas fa-exclamation-circle"></i> Prioridade</label>
+                    <select id="task-priority">
+                        <option value="low">Baixa</option>
+                        <option value="medium" selected>Média</option>
+                        <option value="high">Alta</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="task-assignee"><i class="fas fa-user"></i> Responsável</label>
+                <select id="task-assignee">
+                    <option value="user1">João Silva</option>
+                    <option value="user2">Maria Souza</option>
+                    <option value="user3">Carlos Oliveira</option>
+                </select>
+            </div>
+            
+            <div class="modal-buttons">
+                <button class="btn-secondary" id="cancel-task">Cancelar</button>
+                <button class="btn-success" id="save-task">Salvar Tarefa</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="js/script.js"></script>
+</body>
+</html> 

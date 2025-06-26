@@ -47,7 +47,7 @@ projeto-modem-recording/
 
 1. **Clone o repositório**:
 ```bash
-git clone https://github.com/SEU_USUARIO/sistema-controle-modems.git
+git clone https://github.com/pastor598/sistema-controle-modems.git
 ```
 
 2. **Navegue até o diretório**:
@@ -130,13 +130,12 @@ Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalh
 
 ## 👨‍💻 Autor
 
-**Seu Nome**
-- GitHub: [@seu-usuario](https://github.com/seu-usuario)
-- LinkedIn: [Seu Perfil](https://linkedin.com/in/seu-perfil)
+**Pastor598**
+- GitHub: [@pastor598](https://github.com/pastor598)
 
 ## 🚀 Demo
 
-[Ver Demonstração](https://seu-usuario.github.io/sistema-controle-modems)
+[Ver Demonstração](https://pastor598.github.io/sistema-controle-modems)
 
 ---
 

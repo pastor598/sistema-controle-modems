@@ -53,7 +53,7 @@ const todayBtn = document.getElementById('today');
 const notification = document.getElementById('notification');
 const totalCountEl = document.getElementById('total-count');
 const totalRecordsEl = document.getElementById('total-records');
-const modelCountEl = document.getElementById('model-count');
+const modelCountEl = document.getElementById('model-count-stat');
 const modelCountStat = document.getElementById('model-count-stat');
 const todayCountEl = document.getElementById('today-count');
 const confirmationModal = document.getElementById('confirmation-modal');
@@ -126,6 +126,7 @@ let performanceChartInstance = null;
 
 // Funções
 function populateFilterModelDropdown() {
+    if (!filterModel) return;
     filterModel.innerHTML = '<option value="">Todos os modelos</option>';
 
     const sortedModels = [...modemModels].sort((a, b) => a.produto.localeCompare(b.produto));
@@ -159,6 +160,7 @@ function showNotification(message, isError = false) {
 }
 
 function populateModelList(searchTerm = '') {
+    if (!modelSelect) return;
     modelSelect.innerHTML = '';
     
     let filteredModels = [...modemModels];
@@ -190,7 +192,7 @@ function populateModelList(searchTerm = '') {
     
     if (filteredModels.length === 0) {
         modelSelect.innerHTML = '<option>Nenhum modelo encontrado</option>';
-        modelCountEl.textContent = 'Total: 0 modelos';
+        if (modelCountEl) modelCountEl.textContent = '0';
         return;
     }
     
@@ -201,7 +203,7 @@ function populateModelList(searchTerm = '') {
         modelSelect.appendChild(option);
     });
     
-    modelCountEl.textContent = `Total: ${filteredModels.length} modelos`;
+    if (modelCountEl) modelCountEl.textContent = `${filteredModels.length}`;
 }
 
 function addRecord() {
@@ -258,6 +260,10 @@ function addRecord() {
 }
 
 function promptDeleteRecord(id) {
+    if (!confirmationModal) {
+        console.error('Modal de confirmação não encontrado!');
+        return;
+    }
     recordToDelete = id;
     confirmationModal.style.display = 'flex';
 }
@@ -280,20 +286,20 @@ function deleteRecord() {
 }
 
 function updateStats() {
-    totalCountEl.textContent = records.length;
-    totalRecordsEl.textContent = records.length;
-    modelCountStat.textContent = modemModels.length;
+    if (totalCountEl) totalCountEl.textContent = records.length;
+    if (totalRecordsEl) totalRecordsEl.textContent = records.length;
+    if (modelCountStat) modelCountStat.textContent = modemModels.length;
     
     // Contar gravações de hoje
     const today = new Date().toISOString().split('T')[0];
     const todayRecords = records.filter(record => record.date === today);
     const todayQuantity = todayRecords.reduce((sum, record) => sum + record.quantity, 0);
-    todayCountEl.textContent = todayQuantity;
+    if (todayCountEl) todayCountEl.textContent = todayQuantity;
     
     // Atualizar barra de progresso
     const progress = Math.min((todayQuantity / dailyGoal) * 100, 100);
-    progressPercent.textContent = `${Math.round(progress)}%`;
-    dailyProgress.style.width = `${progress}%`;
+    if (progressPercent) progressPercent.textContent = `${Math.round(progress)}%`;
+    if (dailyProgress) dailyProgress.style.width = `${progress}%`;
 
     // Atualizar texto da meta na UI
     const dailyGoalLabel = document.querySelector('.progress-header span:first-child');
@@ -345,14 +351,6 @@ function showRecords(recordsToShow, targetListElement) {
         `;
         targetListElement.appendChild(recordEl);
     });
-    
-    // Adicionar event listeners para os botões de deletar
-    document.querySelectorAll('.btn-delete').forEach(button => {
-        button.addEventListener('click', (e) => {
-            const id = button.getAttribute('data-id');
-            promptDeleteRecord(id);
-        });
-    });
 }
 
 function applyFilters() {
@@ -393,13 +391,12 @@ function applyFilters() {
 }
 
 function resetFilters() {
-    filterDate.value = '';
-    filterModel.value = '';
-    filterManufacturer.value = '';
-    filterQuantity.value = '';
-    globalSearch.value = '';
+    if (filterDate) filterDate.value = '';
+    if (filterModel) filterModel.value = '';
+    if (filterManufacturer) filterManufacturer.value = '';
+    if (filterQuantity) filterQuantity.value = '';
+    if (globalSearch) globalSearch.value = '';
     applyFilters();
-    modelToEditId = null;
 }
 
 function formatDate(dateString) {
@@ -827,10 +824,10 @@ function renderModelsList() {
                 </div>
             </div>
             <div class="actions">
-                <button class="btn-secondary" style="padding: 8px 15px; font-size: 0.9rem;" onclick="openEditModal(${model.id})">
+                <button class="btn-secondary btn-edit-model" data-id="${model.id}">
                     <i class="fas fa-edit"></i>
                 </button>
-                <button class="btn-delete" onclick="deleteModel(${model.id})">
+                <button class="btn-delete btn-delete-model" data-id="${model.id}">
                     <i class="fas fa-trash"></i>
                 </button>
             </div>
@@ -960,6 +957,7 @@ function clearAllData() {
 }
 
 function populatePlanningDropdown() {
+    if (!planningModelSelect) return;
     planningModelSelect.innerHTML = '<option value="">-- Escolha um modelo --</option>';
     const sortedModels = [...modemModels].sort((a, b) => a.produto.localeCompare(b.produto));
     sortedModels.forEach(model => {
@@ -998,10 +996,171 @@ function calculateDailyPotential() {
     `;
 }
 
+function setupEventListeners() {
+    // Delegação de eventos para ações na lista de registros
+    document.body.addEventListener('click', (e) => {
+        // Botão de deletar registro
+        const deleteRecordBtn = e.target.closest('.btn-delete[data-id]');
+        if (deleteRecordBtn) {
+            const id = deleteRecordBtn.getAttribute('data-id');
+            promptDeleteRecord(id);
+            return;
+        }
+
+        // Botão de editar modelo
+        const editModelBtn = e.target.closest('.btn-edit-model[data-id]');
+        if (editModelBtn) {
+            const id = parseInt(editModelBtn.getAttribute('data-id'));
+            openEditModal(id);
+            return;
+        }
+
+        // Botão de deletar modelo
+        const deleteModelBtn = e.target.closest('.btn-delete-model[data-id]');
+        if (deleteModelBtn) {
+            const id = parseInt(deleteModelBtn.getAttribute('data-id'));
+            deleteModel(id);
+            return;
+        }
+
+        // Fechar Modais
+        if (e.target === confirmationModal) {
+            confirmationModal.style.display = 'none';
+            recordToDelete = null;
+        }
+        if (e.target === taskModal) {
+            taskModal.style.display = 'none';
+        }
+        if (e.target === editModelModal) {
+            editModelModal.style.display = 'none';
+            modelToEditId = null;
+        }
+
+        // Fechar dropdown do usuário
+        if (userMenu && userDropdown && !userMenu.contains(e.target) && !userDropdown.contains(e.target)) {
+            userDropdown.classList.remove('show');
+        }
+    });
+
+    if (addButton) addButton.addEventListener('click', addRecord);
+    if (addModelBtn) addModelBtn.addEventListener('click', addModel);
+
+    if (searchButton) searchButton.addEventListener('click', () => populateModelList(searchModelInput.value));
+    if (searchModelInput) searchModelInput.addEventListener('input', () => populateModelList(searchModelInput.value));
+
+    if (prevMonthBtn) prevMonthBtn.addEventListener('click', () => {
+        currentMonth--;
+        if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+        updateCalendar();
+    });
+
+    if (nextMonthBtn) nextMonthBtn.addEventListener('click', () => {
+        currentMonth++;
+        if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+        updateCalendar();
+    });
+
+    if (todayBtn) todayBtn.addEventListener('click', () => {
+        const today = new Date();
+        currentMonth = today.getMonth();
+        currentYear = today.getFullYear();
+        updateCalendar();
+        const todayISO = today.toISOString().split('T')[0];
+        dateInput.value = todayISO;
+        selectedDate = todayISO;
+        filterDate.value = todayISO;
+        applyFilters();
+    });
+
+    if (cancelDeleteBtn) cancelDeleteBtn.addEventListener('click', () => {
+        confirmationModal.style.display = 'none';
+        recordToDelete = null;
+    });
+
+    if (confirmDeleteBtn) confirmDeleteBtn.addEventListener('click', deleteRecord);
+
+    if (filterButtons) filterButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            currentFilter = button.getAttribute('data-filter');
+            populateModelList(searchModelInput.value);
+        });
+    });
+
+    if (sortSelect) sortSelect.addEventListener('change', () => {
+        currentSort = sortSelect.value;
+        populateModelList(searchModelInput.value);
+    });
+
+    if (menuToggle) menuToggle.addEventListener('click', () => {
+        if (sidebar) sidebar.classList.toggle('active');
+    });
+
+    if (chartRange) chartRange.addEventListener('change', updatePerformanceChart);
+    if (exportPdfBtn) exportPdfBtn.addEventListener('click', exportToPDF);
+    if (exportExcelBtn) exportExcelBtn.addEventListener('click', exportToExcel);
+    if (clearRecordsBtn) clearRecordsBtn.addEventListener('click', clearAllRecords);
+
+    if (filterDate) filterDate.addEventListener('change', applyFilters);
+    if (filterModel) filterModel.addEventListener('change', applyFilters);
+    if (filterManufacturer) filterManufacturer.addEventListener('change', applyFilters);
+    if (filterQuantity) filterQuantity.addEventListener('input', applyFilters);
+    if (globalSearch) globalSearch.addEventListener('input', applyFilters);
+    if (resetFiltersBtn) resetFiltersBtn.addEventListener('click', resetFilters);
+
+    if (addTaskBtn) addTaskBtn.addEventListener('click', openTaskModal);
+    if (closeTaskBtn) closeTaskBtn.addEventListener('click', () => taskModal.style.display = 'none');
+    if (cancelTaskBtn) cancelTaskBtn.addEventListener('click', () => taskModal.style.display = 'none');
+    if (saveTaskBtn) saveTaskBtn.addEventListener('click', saveTask);
+    
+    if (confirmEditModelBtn) confirmEditModelBtn.addEventListener('click', saveModelChanges);
+    if (cancelEditModelBtn) cancelEditModelBtn.addEventListener('click', () => {
+        if (editModelModal) editModelModal.style.display = 'none';
+        modelToEditId = null;
+    });
+
+    if (saveSettingsBtn) saveSettingsBtn.addEventListener('click', saveSettings);
+    if (clearAllDataBtn) clearAllDataBtn.addEventListener('click', clearAllData);
+    
+    if (userMenu) userMenu.addEventListener('click', () => {
+        if (userDropdown) userDropdown.classList.toggle('show');
+    });
+    
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('Clique no menu lateral:', link.id, '->', link.getAttribute('href'));
+            const viewId = link.getAttribute('href').substring(1);
+            navigateTo(viewId);
+        });
+    });
+
+    if (dashboardTabs) dashboardTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            dashboardTabs.forEach(t => t.classList.remove('active'));
+            dashboardTabContents.forEach(c => c.classList.remove('active'));
+            tab.classList.add('active');
+            const tabContentId = `tab-${tab.dataset.tab}`;
+            const activeTabContent = document.getElementById(tabContentId);
+            if (activeTabContent) activeTabContent.classList.add('active');
+
+            if (tab.dataset.tab === 'reports-summary') {
+                setTimeout(() => updateManufacturerChart(), 100);
+            }
+            if (tab.dataset.tab === 'overview') {
+                setTimeout(() => updatePerformanceChart(), 100);
+            }
+        });
+    });
+    
+    if (planningModelSelect) planningModelSelect.addEventListener('change', calculateDailyPotential);
+}
+
 // Inicialização
 function initApp() {
     // Definir data inicial
-    dateInput.value = selectedDate;
+    if (dateInput) dateInput.value = selectedDate;
 
     // Carregar modelos do localStorage
     loadModelsFromStorage();
@@ -1015,215 +1174,26 @@ function initApp() {
     updateStats();
     showRecords(records, recordsList);
     updateCalendar();
+    setupEventListeners();
+
+    // Navegar para a view inicial e renderizar gráficos
+    navigateTo('view-dashboard');
     
-    // Renderizar gráficos iniciais para a aba ativa
+    // Renderizar gráficos iniciais para a aba ativa no dashboard
     setTimeout(() => {
-        const activeTab = document.querySelector('.tab.active');
-        if (activeTab) {
-            if (activeTab.dataset.tab === 'overview') {
+        const activeDashboardTab = document.querySelector('#view-dashboard .tab.active');
+        if (activeDashboardTab) {
+            if (activeDashboardTab.dataset.tab === 'overview') {
                 updatePerformanceChart();
-            } else if (activeTab.dataset.tab === 'reports-summary') {
+            } else if (activeDashboardTab.dataset.tab === 'reports-summary') {
                 updateManufacturerChart();
             }
         } else {
-            // Se não há aba ativa, renderizar o gráfico de visão geral por padrão
+            // Se nenhuma aba estiver ativa, renderizar o gráfico da primeira aba por padrão
             updatePerformanceChart();
         }
     }, 200);
 }
 
 // Iniciar aplicação
-initApp();
-
-// Event Listeners
-if (addButton) addButton.addEventListener('click', addRecord);
-if (addModelBtn) addModelBtn.addEventListener('click', addModel);
-
-if (searchButton) searchButton.addEventListener('click', () => {
-    populateModelList(searchModelInput.value);
-});
-
-if (searchModelInput) searchModelInput.addEventListener('input', () => {
-    populateModelList(searchModelInput.value);
-});
-
-if (prevMonthBtn) prevMonthBtn.addEventListener('click', () => {
-    currentMonth--;
-    if (currentMonth < 0) {
-        currentMonth = 11;
-        currentYear--;
-    }
-    updateCalendar();
-});
-
-if (nextMonthBtn) nextMonthBtn.addEventListener('click', () => {
-    currentMonth++;
-    if (currentMonth > 11) {
-        currentMonth = 0;
-        currentYear++;
-    }
-    updateCalendar();
-});
-
-if (todayBtn) todayBtn.addEventListener('click', () => {
-    const today = new Date();
-    currentMonth = today.getMonth();
-    currentYear = today.getFullYear();
-    updateCalendar();
-    dateInput.value = today.toISOString().split('T')[0];
-    selectedDate = dateInput.value;
-    applyFilters();
-});
-
-if (cancelDeleteBtn) cancelDeleteBtn.addEventListener('click', () => {
-    confirmationModal.style.display = 'none';
-    recordToDelete = null;
-});
-
-if (confirmDeleteBtn) confirmDeleteBtn.addEventListener('click', deleteRecord);
-
-// Fechar modal ao clicar fora dele
-window.addEventListener('click', (e) => {
-    if (e.target === confirmationModal) {
-        confirmationModal.style.display = 'none';
-        recordToDelete = null;
-    }
-    if (e.target === taskModal) {
-        taskModal.style.display = 'none';
-    }
-    if (e.target === editModelModal) {
-        editModelModal.style.display = 'none';
-        modelToEditId = null;
-    }
-    // Fechar dropdown do usuário
-    if (userMenu && userDropdown && !userMenu.contains(e.target) && !userDropdown.contains(e.target)) {
-        userDropdown.classList.remove('show');
-    }
-});
-
-// Filtros por fabricante
-if (filterButtons) filterButtons.forEach(button => {
-    button.addEventListener('click', () => {
-        // Remover classe ativa de todos
-        filterButtons.forEach(btn => btn.classList.remove('active'));
-        // Adicionar classe ativa ao botão clicado
-        button.classList.add('active');
-        // Atualizar filtro
-        currentFilter = button.getAttribute('data-filter');
-        // Repopular lista
-        populateModelList(searchModelInput.value);
-    });
-});
-
-// Ordenação
-if (sortSelect) sortSelect.addEventListener('change', () => {
-    currentSort = sortSelect.value;
-    populateModelList(searchModelInput.value);
-});
-
-// Menu toggle
-if (menuToggle) menuToggle.addEventListener('click', () => {
-    if (sidebar) sidebar.classList.toggle('active');
-});
-
-// Atualizar gráfico quando mudar o intervalo
-if (chartRange) chartRange.addEventListener('change', updatePerformanceChart);
-
-// Exportação de dados
-if (exportPdfBtn) exportPdfBtn.addEventListener('click', exportToPDF);
-if (exportExcelBtn) exportExcelBtn.addEventListener('click', exportToExcel);
-
-// Limpar registros
-if (clearRecordsBtn) clearRecordsBtn.addEventListener('click', clearAllRecords);
-
-// Filtros
-if (filterDate) filterDate.addEventListener('change', applyFilters);
-if (filterModel) filterModel.addEventListener('change', applyFilters);
-if (filterManufacturer) filterManufacturer.addEventListener('change', applyFilters);
-if (filterQuantity) filterQuantity.addEventListener('input', applyFilters);
-if (globalSearch) globalSearch.addEventListener('input', applyFilters);
-if (resetFiltersBtn) resetFiltersBtn.addEventListener('click', resetFilters);
-
-// Tarefas
-if (addTaskBtn) addTaskBtn.addEventListener('click', openTaskModal);
-if (closeTaskBtn) closeTaskBtn.addEventListener('click', () => taskModal.style.display = 'none');
-if (cancelTaskBtn) cancelTaskBtn.addEventListener('click', () => taskModal.style.display = 'none');
-if (saveTaskBtn) saveTaskBtn.addEventListener('click', saveTask);
-
-// Configurar arrastar e soltar para kanban
-const kanbanItems = document.querySelectorAll('.kanban-item');
-const kanbanColumns = document.querySelectorAll('.kanban-column');
-
-if (kanbanItems && kanbanColumns) {
-    kanbanItems.forEach(item => {
-        item.setAttribute('draggable', true);
-        item.addEventListener('dragstart', () => {
-            item.classList.add('dragging');
-        });
-        item.addEventListener('dragend', () => {
-            item.classList.remove('dragging');
-        });
-    });
-    kanbanColumns.forEach(column => {
-        column.addEventListener('dragover', e => {
-            e.preventDefault();
-            const draggingItem = document.querySelector('.dragging');
-            column.querySelector('.kanban-items').appendChild(draggingItem);
-        });
-    });
-}
-
-if (confirmEditModelBtn) confirmEditModelBtn.addEventListener('click', saveModelChanges);
-if (cancelEditModelBtn) cancelEditModelBtn.addEventListener('click', () => {
-    if (editModelModal) editModelModal.style.display = 'none';
-    modelToEditId = null;
-});
-
-if (saveSettingsBtn) saveSettingsBtn.addEventListener('click', saveSettings);
-if (clearAllDataBtn) clearAllDataBtn.addEventListener('click', clearAllData);
-
-// --- Controles do Cabeçalho ---
-if (userMenu) userMenu.addEventListener('click', () => {
-    if (userDropdown) userDropdown.classList.toggle('show');
-});
-
-if (logoutBtn) logoutBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    showNotification('Você saiu do sistema (simulação).');
-    if (userDropdown) userDropdown.classList.remove('show');
-});
-
-if (notificationsBtn) notificationsBtn.addEventListener('click', () => navigateTo('view-alerts'));
-if (settingsBtn) settingsBtn.addEventListener('click', () => navigateTo('view-settings'));
-
-// --- Abas do Dashboard ---
-if (dashboardTabs && dashboardTabContents) {
-    dashboardTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            // Desativar todas as abas e conteúdos
-            dashboardTabs.forEach(t => t.classList.remove('active'));
-            dashboardTabContents.forEach(c => c.classList.remove('active'));
-
-            // Ativar a aba e conteúdo clicado
-            tab.classList.add('active');
-            const tabContentId = `tab-${tab.dataset.tab}`;
-            const activeTabContent = document.getElementById(tabContentId);
-            if (activeTabContent) {
-                activeTabContent.classList.add('active');
-            }
-
-            // Renderizar gráficos quando a aba correspondente estiver ativa
-            if (tab.dataset.tab === 'reports-summary') {
-                console.log('Ativando aba reports-summary, renderizando gráfico de pizza');
-                setTimeout(() => updateManufacturerChart(), 100);
-            }
-            
-            if (tab.dataset.tab === 'overview') {
-                console.log('Ativando aba overview, renderizando gráfico de performance');
-                setTimeout(() => updatePerformanceChart(), 100);
-            }
-        });
-    });
-}
-
-if (planningModelSelect) planningModelSelect.addEventListener('change', calculateDailyPotential); 
+document.addEventListener('DOMContentLoaded', initApp); 

@@ -79,8 +79,8 @@ body::before {
 .sidebar {
     grid-area: sidebar;
     background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
     border-right: 1px solid rgba(255, 255, 255, 0.1);
     height: 100vh;
     position: fixed;
@@ -206,8 +206,8 @@ body::before {
     background: rgba(30, 60, 114, 0.1);
     padding: 15px;
     border-radius: 12px;
-    backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
     border: 1px solid rgba(30, 60, 114, 0.2);
 }
 
@@ -226,8 +226,8 @@ body::before {
 header {
     grid-area: header;
     background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
     padding: 15px 30px;
     display: flex;
     justify-content: space-between;
@@ -394,8 +394,8 @@ header {
 
 .card {
     background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
     border-radius: var(--border-radius);
     padding: 25px;
     box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
@@ -587,8 +587,8 @@ button:active {
 
 .modem-item {
     background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
     border-radius: 12px;
     padding: 18px;
     margin-bottom: 15px;
@@ -793,8 +793,8 @@ footer {
     font-size: 0.95rem;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -837,8 +837,8 @@ footer {
     align-items: center;
     gap: 12px;
     max-width: 400px;
-    backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
 }
 
 .notification i {
@@ -914,8 +914,8 @@ footer {
 
 .stat-card {
     background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
     border-radius: var(--border-radius);
     padding: 20px;
     text-align: center;
@@ -1163,8 +1163,8 @@ footer {
 
 .modal-content {
     background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
     border-radius: var(--border-radius);
     padding: 30px;
     max-width: 500px;
@@ -1199,8 +1199,8 @@ footer {
     cursor: pointer;
     transition: var(--transition);
     color: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
 }
 
 .tab.active {

@@ -121,6 +121,8 @@ const planningModelSelect = document.getElementById('planning-model-select');
 const planningResult = document.getElementById('planning-result');
 
 let modelToEditId = null;
+let manufacturerChartInstance = null;
+let performanceChartInstance = null;
 
 // Funções
 function populateFilterModelDropdown() {
@@ -477,11 +479,14 @@ function updateManufacturerChart() {
     // Calcular distribuição por fabricante
     const distribution = {};
     records.forEach(record => {
-        const manufacturer = record.model.fabricante;
-        if (!distribution[manufacturer]) {
-            distribution[manufacturer] = 0;
+        const model = modemModels.find(m => m.id == record.model);
+        if(model) {
+            const manufacturer = model.fabricante;
+            if (!distribution[manufacturer]) {
+                distribution[manufacturer] = 0;
+            }
+            distribution[manufacturer] += record.quantity;
         }
-        distribution[manufacturer] += record.quantity;
     });
     
     // Preparar dados para o gráfico
@@ -528,12 +533,12 @@ function updateManufacturerChart() {
     };
     
     // Renderizar o gráfico
-    if (window.manufacturerChart) {
-        window.manufacturerChart.destroy();
+    if (manufacturerChartInstance) {
+        manufacturerChartInstance.destroy();
     }
     
-    window.manufacturerChart = new ApexCharts(manufacturerChartEl, options);
-    window.manufacturerChart.render();
+    manufacturerChartInstance = new ApexCharts(manufacturerChartEl, options);
+    manufacturerChartInstance.render();
 }
 
 function updatePerformanceChart() {
@@ -608,12 +613,12 @@ function updatePerformanceChart() {
     };
     
     // Renderizar o gráfico
-    if (window.performanceChart) {
-        window.performanceChart.destroy();
+    if (performanceChartInstance) {
+        performanceChartInstance.destroy();
     }
     
-    window.performanceChart = new ApexCharts(performanceChartEl, options);
-    window.performanceChart.render();
+    performanceChartInstance = new ApexCharts(performanceChartEl, options);
+    performanceChartInstance.render();
 }
 
 function exportToPDF() {
@@ -965,51 +970,30 @@ function calculateDailyPotential() {
 
 // Inicialização
 function initApp() {
-    // Carregar configurações
-    dailyGoal = parseInt(localStorage.getItem('dailyGoal')) || 50;
-    dailyGoalInput.value = dailyGoal;
+    // Definir data inicial
+    dateInput.value = selectedDate;
 
-    // Carregar modelos do storage
+    // Carregar modelos do localStorage
     loadModelsFromStorage();
 
-    // Preencher lista de modelos
+    // Popular dropdowns e listas
     populateModelList();
     populateFilterModelDropdown();
     populatePlanningDropdown();
-    
-    // Renderizar tabela de modelos na view de modelos
-    renderModelsList();
 
-    // Configurar data atual
-    const today = new Date();
-    dateInput.value = today.toISOString().split('T')[0];
-    selectedDate = dateInput.value;
-    
-    // Atualizar calendário
+    // Renderizar dados iniciais
+    updateStats();
+    showRecords(records, recordsList);
     updateCalendar();
     
-    // Aplicar filtros e mostrar registros
-    applyFilters();
-    
-    // Atualizar estatísticas
-    updateStats();
-    
-    // Atualizar gráficos
-    updateManufacturerChart();
-    updatePerformanceChart();
-
-    // Configurar navegação
-    navLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const viewName = link.id.split('-')[1];
-            navigateTo(`view-${viewName}`);
-        });
-    });
-
-    // Iniciar na view do dashboard
-    navigateTo('view-dashboard');
+    // Renderizar gráfico inicial apenas se a aba estiver visível
+    if(document.querySelector('#tab-overview').classList.contains('active')) {
+        updatePerformanceChart();
+    }
 }
+
+// Iniciar aplicação
+initApp();
 
 // Event Listeners
 if (addButton) addButton.addEventListener('click', addRecord);
@@ -1173,20 +1157,31 @@ if (notificationsBtn) notificationsBtn.addEventListener('click', () => navigateT
 if (settingsBtn) settingsBtn.addEventListener('click', () => navigateTo('view-settings'));
 
 // --- Abas do Dashboard ---
-if (dashboardTabs && dashboardTabContents) dashboardTabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-        // Desativar todas as abas e conteúdos
-        dashboardTabs.forEach(t => t.classList.remove('active'));
-        dashboardTabContents.forEach(c => c.classList.remove('active'));
-        // Ativar a aba clicada
-        tab.classList.add('active');
-        const tabId = tab.getAttribute('data-tab');
-        const tabContent = document.getElementById(`tab-${tabId}`);
-        if (tabContent) tabContent.classList.add('active');
+if (dashboardTabs && dashboardTabContents) {
+    dashboardTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Desativar todas as abas e conteúdos
+            dashboardTabs.forEach(t => t.classList.remove('active'));
+            dashboardTabContents.forEach(c => c.classList.remove('active'));
+
+            // Ativar a aba e conteúdo clicado
+            tab.classList.add('active');
+            const tabContentId = `tab-${tab.dataset.tab}`;
+            const activeTabContent = document.getElementById(tabContentId);
+            if (activeTabContent) {
+                activeTabContent.classList.add('active');
+            }
+
+            // Renderizar gráficos apenas quando a aba correspondente estiver ativa
+            if (tab.dataset.tab === 'reports-summary' && !manufacturerChartInstance) {
+                updateManufacturerChart();
+            }
+            
+            if (tab.dataset.tab === 'overview' && performanceChartInstance) {
+                performanceChartInstance.updateSeries(performanceChartInstance.w.globals.series);
+            }
+        });
     });
-});
+}
 
-if (planningModelSelect) planningModelSelect.addEventListener('change', calculateDailyPotential);
-
-// Inicializar a aplicação
-initApp(); 
+if (planningModelSelect) planningModelSelect.addEventListener('change', calculateDailyPotential); 

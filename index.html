@@ -198,88 +198,44 @@
             <!-- Tab Content: Produção -->
             <div id="tab-production" class="tab-content">
                  <div class="dashboard">
-                    <div class="card">
-                        <h2 class="card-title"><i class="fas fa-plus-circle"></i> Novo Registro</h2>
+                    <div class="card card-highlight">
+                        <h2 class="card-title"><i class="fas fa-plus-circle"></i> Adicionar Gravação</h2>
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="date">Data da Gravação</label>
-                                <div class="input-with-icon">
-                                    <i class="fas fa-calendar"></i>
-                                    <input type="date" id="date" value="">
-                                </div>
+                                <label for="date"><i class="fas fa-calendar-day"></i> Data</label>
+                                <input type="date" id="date">
                             </div>
-                            
                             <div class="form-group">
-                                <label for="quantity">Quantidade</label>
-                                <div class="input-with-icon">
-                                    <i class="fas fa-calculator"></i>
-                                    <input type="number" id="quantity" min="1" value="1" placeholder="Qtd">
-                                </div>
+                                <label for="quantity"><i class="fas fa-sort-numeric-up"></i> Quantidade</label>
+                                <input type="number" id="quantity" min="1">
                             </div>
                         </div>
-                        
-                        <div class="form-group model-list-container">
-                            <label for="model"><i class="fas fa-wifi"></i> Modelo do Modem</label>
-                            
-                            <div class="model-filters">
-                                <button class="filter-btn active smooth-transition" data-filter="all">Todos</button>
-                                <button class="filter-btn smooth-transition" data-filter="Huawei">Huawei</button>
-                                <button class="filter-btn smooth-transition" data-filter="Nokia">Nokia</button>
-                            </div>
-                            
-                            <div class="search-container">
-                                <input type="text" id="search-model" placeholder="Pesquisar modelo..." autocomplete="off">
-                                <button id="search-btn" aria-label="Pesquisar modelo"><i class="fas fa-search"></i></button>
-                            </div>
-                            
-                            <select id="model" size="8" class="full-width-select">
-                                <!-- Modelos serão preenchidos via JavaScript -->
-                            </select>
-                            
-                            <div class="sort-options">
-                                <span class="sort-label">Ordenar por:</span>
-                                <select id="sort-models" aria-label="Ordenar modelos por" class="sort-models-select">
-                                    <option value="name">Nome</option>
-                                    <option value="manufacturer">Fabricante</option>
-                                </select>
-                            </div>
-                            
-                            <div class="model-list-info" id="model-count">Total: 11 modelos</div>
-                        </div>
-                        
                         <div class="form-group">
-                            <label for="notes">Observações</label>
-                            <div class="input-with-icon">
-                                <i class="fas fa-sticky-note"></i>
-                                <textarea id="notes" rows="3" placeholder="Adicione observações sobre a gravação..."></textarea>
-                            </div>
+                            <label for="model"><i class="fas fa-wifi"></i> Modelo</label>
+                            <select id="model">
+                                <!-- Modelos preenchidos via JS -->
+                            </select>
                         </div>
-                        
-                        <button id="add-btn" class="full-width-button">
-                            <i class="fas fa-save"></i> Registrar Gravação
-                        </button>
+                        <div class="form-group">
+                             <label for="notes"><i class="fas fa-sticky-note"></i> Observações</label>
+                            <textarea id="notes" rows="2" placeholder="Opcional..."></textarea>
+                        </div>
+                        <button id="add-btn" class="full-width-button"><i class="fas fa-plus"></i> Adicionar Gravação</button>
                     </div>
 
-                    <div class="card">
-                        <h2 class="card-title"><i class="fas fa-list"></i> Últimas Gravações</h2>
-                         <div class="modem-list" id="records-list">
-                            <div class="empty-state">
-                                <i class="fas fa-calendar-day"></i>
-                                <p>Nenhuma gravação registrada</p>
+                    <div class="card grid-col-span-2">
+                         <div class="card-title">
+                            <i class="fas fa-history"></i>
+                            <div>Registros Recentes</div>
+                            <div class="model-filters">
+                                <button class="filter-btn active" data-filter="all">Todos</button>
+                                <button class="filter-btn" data-filter="Huawei">Huawei</button>
+                                <button class="filter-btn" data-filter="Nokia">Nokia</button>
+                                <button class="filter-btn" data-filter="TP-Link">TP-Link</button>
                             </div>
                         </div>
-                    </div>
-                     <div class="card">
-                        <h2 class="card-title"><i class="fas fa-calculator"></i> Planejamento Diário</h2>
-                        <div class="form-group">
-                            <label for="planning-model-select">Selecione um modelo para planejar</label>
-                            <select id="planning-model-select">
-                                <option value="">-- Escolha um modelo --</option>
-                            </select>
-                        </div>
-                        <div id="planning-result" class="empty-state planning-result-placeholder">
-                            <i class="fas fa-hourglass-start"></i>
-                            <p>Selecione um modelo para ver o potencial de gravação diário.</p>
+                        <div id="records-list" class="modem-list">
+                            <!-- Registros inseridos aqui -->
                         </div>
                     </div>
                 </div>
@@ -287,7 +243,7 @@
 
             <!-- Tab Content: Relatórios -->
             <div id="tab-reports-summary" class="tab-content">
-                <div class="card">
+                 <div class="card">
                     <h2 class="card-title"><i class="fas fa-chart-pie"></i> Distribuição por Fabricante</h2>
                     <div id="manufacturer-chart" class="chart-container"></div>
                 </div>

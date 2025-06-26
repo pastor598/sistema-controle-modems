@@ -1308,6 +1308,13 @@ footer {
     gap: 15px;
 }
 
+.advanced-filters input,
+.advanced-filters select {
+    background-color: #f8f9fa;
+    color: #343a40;
+    border: 1px solid #dee2e6;
+}
+
 /* Modal de Tarefas */
 .task-modal {
     display: none;

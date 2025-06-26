@@ -476,6 +476,12 @@ function updateCalendar() {
 }
 
 function updateManufacturerChart() {
+    // Verificar se o elemento existe
+    if (!manufacturerChartEl) {
+        console.warn('Element manufacturer-chart not found');
+        return;
+    }
+    
     // Calcular distribuição por fabricante
     const distribution = {};
     records.forEach(record => {
@@ -492,6 +498,12 @@ function updateManufacturerChart() {
     // Preparar dados para o gráfico
     const labels = Object.keys(distribution);
     const series = Object.values(distribution);
+    
+    // Se não há dados, mostrar gráfico vazio
+    if (labels.length === 0) {
+        labels.push('Nenhum dado');
+        series.push(1);
+    }
     
     // Configurar o gráfico de pizza
     const options = {
@@ -537,12 +549,24 @@ function updateManufacturerChart() {
         manufacturerChartInstance.destroy();
     }
     
+    // Verificar se ApexCharts está disponível
+    if (typeof ApexCharts === 'undefined') {
+        console.error('ApexCharts não está carregado');
+        return;
+    }
+    
     manufacturerChartInstance = new ApexCharts(manufacturerChartEl, options);
     manufacturerChartInstance.render();
 }
 
 function updatePerformanceChart() {
-    const range = parseInt(chartRange.value);
+    // Verificar se o elemento existe
+    if (!performanceChartEl) {
+        console.warn('Element performance-chart not found');
+        return;
+    }
+    
+    const range = parseInt(chartRange?.value || 7);
     const today = new Date();
     const labels = [];
     const data = [];
@@ -615,6 +639,12 @@ function updatePerformanceChart() {
     // Renderizar o gráfico
     if (performanceChartInstance) {
         performanceChartInstance.destroy();
+    }
+    
+    // Verificar se ApexCharts está disponível
+    if (typeof ApexCharts === 'undefined') {
+        console.error('ApexCharts não está carregado');
+        return;
     }
     
     performanceChartInstance = new ApexCharts(performanceChartEl, options);
@@ -986,10 +1016,20 @@ function initApp() {
     showRecords(records, recordsList);
     updateCalendar();
     
-    // Renderizar gráfico inicial apenas se a aba estiver visível
-    if(document.querySelector('#tab-overview').classList.contains('active')) {
-        updatePerformanceChart();
-    }
+    // Renderizar gráficos iniciais para a aba ativa
+    setTimeout(() => {
+        const activeTab = document.querySelector('.tab.active');
+        if (activeTab) {
+            if (activeTab.dataset.tab === 'overview') {
+                updatePerformanceChart();
+            } else if (activeTab.dataset.tab === 'reports-summary') {
+                updateManufacturerChart();
+            }
+        } else {
+            // Se não há aba ativa, renderizar o gráfico de visão geral por padrão
+            updatePerformanceChart();
+        }
+    }, 200);
 }
 
 // Iniciar aplicação
@@ -1172,13 +1212,15 @@ if (dashboardTabs && dashboardTabContents) {
                 activeTabContent.classList.add('active');
             }
 
-            // Renderizar gráficos apenas quando a aba correspondente estiver ativa
-            if (tab.dataset.tab === 'reports-summary' && !manufacturerChartInstance) {
-                updateManufacturerChart();
+            // Renderizar gráficos quando a aba correspondente estiver ativa
+            if (tab.dataset.tab === 'reports-summary') {
+                console.log('Ativando aba reports-summary, renderizando gráfico de pizza');
+                setTimeout(() => updateManufacturerChart(), 100);
             }
             
-            if (tab.dataset.tab === 'overview' && performanceChartInstance) {
-                performanceChartInstance.updateSeries(performanceChartInstance.w.globals.series);
+            if (tab.dataset.tab === 'overview') {
+                console.log('Ativando aba overview, renderizando gráfico de performance');
+                setTimeout(() => updatePerformanceChart(), 100);
             }
         });
     });

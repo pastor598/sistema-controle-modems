@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Modo Escuro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div style="padding: 20px;">
+        <h1>Teste do Modo Escuro</h1>
+        
+        <button id="theme-toggle" style="padding: 10px 20px; margin: 20px 0; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer;">
+            <i class="fas fa-moon"></i> Alternar Tema
+        </button>
+        
+        <div class="card" style="margin: 20px 0; padding: 20px; max-width: 500px;">
+            <h2>Card de Teste</h2>
+            <p>Este é um card para testar se o modo escuro está funcionando corretamente.</p>
+            <p>O fundo e as cores do texto devem mudar quando o tema for alternado.</p>
+        </div>
+        
+        <div class="stat-card" style="margin: 20px 0; padding: 20px; max-width: 300px;">
+            <div class="stat-label">Estatística de Teste</div>
+            <div class="stat-value">42</div>
+            <p>Esta é uma estatística de exemplo.</p>
+        </div>
+        
+        <input type="text" placeholder="Campo de teste" style="margin: 10px 0; width: 300px;">
+        <br>
+        <select style="margin: 10px 0; width: 300px;">
+            <option>Opção 1</option>
+            <option>Opção 2</option>
+        </select>
+        
+        <div class="empty-state" style="margin: 20px 0; max-width: 400px;">
+            <i class="fas fa-moon"></i>
+            <p>Estado vazio de teste</p>
+        </div>
+    </div>
+    
+    <script src="js/script.js"></script>
+    <script src="debug-theme.js"></script>
+</body>
+</html> 

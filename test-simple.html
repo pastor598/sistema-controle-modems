@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Simples - Modo Escuro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="test-theme.css">
+</head>
+<body>
+    <div style="padding: 20px;">
+        <h1>Teste Simples do Modo Escuro</h1>
+        
+        <button id="theme-toggle">
+            <i class="fas fa-moon"></i> Alternar Tema
+        </button>
+        
+        <div class="card">
+            <h2>Card de Teste</h2>
+            <p>Este é um card para testar se o modo escuro está funcionando.</p>
+            <p>Clique no botão acima para alternar entre os temas.</p>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-label">Estatística</div>
+            <div class="stat-value">42</div>
+        </div>
+        
+        <input type="text" placeholder="Campo de teste">
+        <select>
+            <option>Opção 1</option>
+            <option>Opção 2</option>
+        </select>
+        
+        <div class="empty-state">
+            <i class="fas fa-moon"></i>
+            <p>Estado vazio</p>
+        </div>
+    </div>
+    
+    <script>
+        // Script simplificado para teste
+        console.log('=== TESTE SIMPLES MODO ESCURO ===');
+        
+        // Aplicar tema inicial
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        console.log('Tema inicial:', savedTheme);
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggle = document.getElementById('theme-toggle');
+            
+            function updateIcon(theme) {
+                const icon = themeToggle.querySelector('i');
+                if (theme === 'dark') {
+                    icon.className = 'fas fa-sun';
+                } else {
+                    icon.className = 'fas fa-moon';
+                }
+            }
+            
+            // Configurar ícone inicial
+            updateIcon(savedTheme);
+            
+            themeToggle.addEventListener('click', function() {
+                console.log('Botão clicado!');
+                
+                const currentTheme = localStorage.getItem('theme') || 'light';
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateIcon(newTheme);
+                
+                console.log('Tema alterado de', currentTheme, 'para', newTheme);
+                
+                // Verificar se a mudança foi aplicada
+                setTimeout(() => {
+                    const bodyBg = window.getComputedStyle(document.body).backgroundColor;
+                    console.log('Nova cor de fundo:', bodyBg);
+                }, 100);
+            });
+        });
+    </script>
+</body>
+</html> 

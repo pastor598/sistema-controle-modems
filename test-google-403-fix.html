@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico Erro 403 - Google Apps Script</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #d32f2f;
+            margin-bottom: 20px;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        
+        .alert-error {
+            background: #ffebee;
+            border: 1px solid #f44336;
+            color: #c62828;
+        }
+        
+        .alert-warning {
+            background: #fff3e0;
+            border: 1px solid #ff9800;
+            color: #ef6c00;
+        }
+        
+        .alert-success {
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+            color: #2e7d32;
+        }
+        
+        .alert-info {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            color: #1565c0;
+        }
+        
+        .form-group {
+            margin: 20px 0;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        input[type="url"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        button {
+            background: #1976d2;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background: #1565c0;
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .solution-steps {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #1976d2;
+        }
+        
+        .solution-steps h3 {
+            color: #1976d2;
+            margin-top: 0;
+        }
+        
+        .solution-steps ol {
+            line-height: 1.6;
+        }
+        
+        .solution-steps li {
+            margin: 10px 0;
+        }
+        
+        .diagnostic-section {
+            margin: 15px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        
+        .highlight {
+            background: #ffeb3b;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        
+        .url-display {
+            background: #e3f2fd;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            word-break: break-all;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Correção do Erro 403 - Google Apps Script</h1>
+        
+        <div class="alert alert-error">
+            <strong>❌ Problema Identificado:</strong> 
+            Sua URL está retornando erro <strong>403 (Proibido)</strong>. 
+            Isso significa que o Google Apps Script não está configurado corretamente para acesso público.
+        </div>
+        
+        <div class="form-group">
+            <label for="scriptUrl">🔗 URL do Google Apps Script:</label>
+            <input type="url" id="scriptUrl" value="https://script.google.com/macros/s/AKfycbx0BYoYIBBZ2f_nb8-mbveATvaMflFOGsCe5WEhO5MNTShWlNzlxGVpKErQq90vyQNj/exec" placeholder="Cole aqui sua URL do Google Apps Script">
+        </div>
+        
+        <div style="text-align: center; margin: 20px 0;">
+            <button onclick="testUrl()">🧪 Testar URL Atual</button>
+            <button onclick="openGoogleScript()">📝 Abrir Google Apps Script</button>
+            <button onclick="showDetailedInstructions()">📋 Ver Instruções Detalhadas</button>
+        </div>
+        
+        <div id="testResults"></div>
+        
+        <div class="solution-steps">
+            <h3>🛠️ Solução Rápida para Erro 403</h3>
+            <p><strong>O erro 403 indica que o Google Apps Script não está implantado corretamente.</strong> Siga estes passos:</p>
+            
+            <ol>
+                <li>
+                    <strong>Acesse o Google Apps Script:</strong>
+                    <br>Vá para <a href="https://script.google.com" target="_blank">script.google.com</a> e abra seu projeto.
+                </li>
+                
+                <li>
+                    <strong>Reimplante o Web App:</strong>
+                    <br>• Clique em <span class="highlight">"Implantar"</span> → <span class="highlight">"Gerenciar implantações"</span>
+                    <br>• Clique no ícone de edição (lápis) na implantação existente
+                    <br>• Ou clique em <span class="highlight">"Nova implantação"</span> se não houver nenhuma
+                </li>
+                
+                <li>
+                    <strong>Configure as Permissões:</strong>
+                    <br>• <strong>Executar como:</strong> Eu (seu-email@gmail.com)
+                    <br>• <strong>Quem tem acesso:</strong> <span class="highlight">"Qualquer pessoa"</span> ← CRÍTICO!
+                </li>
+                
+                <li>
+                    <strong>Autorize o Script:</strong>
+                    <br>• Execute a função <span class="highlight">"setup"</span> no editor
+                    <br>• Autorize as permissões quando solicitado
+                    <br>• Pode aparecer aviso "App não verificado" - clique em "Avançado" e prossiga
+                </li>
+                
+                <li>
+                    <strong>Copie a Nova URL:</strong>
+                    <br>• Após a implantação, copie a URL que termina com <code>/exec</code>
+                    <br>• Cole a nova URL no campo acima e teste novamente
+                </li>
+            </ol>
+        </div>
+        
+        <div class="alert alert-warning">
+            <strong>⚠️ Importante:</strong> 
+            A configuração mais comum que resolve o erro 403 é mudar 
+            <strong>"Quem tem acesso"</strong> de "Somente eu" para <strong>"Qualquer pessoa"</strong>.
+        </div>
+        
+        <div id="detailedInstructions" style="display: none;">
+            <div class="solution-steps">
+                <h3>📖 Instruções Detalhadas com Screenshots</h3>
+                
+                <h4>Passo 1: Acessar o Google Apps Script</h4>
+                <p>1. Vá para <a href="https://script.google.com" target="_blank">https://script.google.com</a></p>
+                <p>2. Encontre seu projeto "ModemControl Pro Integration" ou similar</p>
+                
+                <h4>Passo 2: Verificar o Código</h4>
+                <p>Certifique-se de que seu código tem estas funções essenciais:</p>
+                <div class="code-block">
+function doPost(e) {
+  try {
+    // Cabeçalhos CORS
+    const headers = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type'
+    };
+    
+    // Seu código aqui...
+    
+    return ContentService
+      .createTextOutput(JSON.stringify({success: true}))
+      .setMimeType(ContentService.MimeType.JSON);
+      
+  } catch (error) {
+    return ContentService
+      .createTextOutput(JSON.stringify({success: false, error: error.toString()}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doGet(e) {
+  return ContentService
+    .createTextOutput(JSON.stringify({message: "ModemControl Pro API - OK"}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+                </div>
+                
+                <h4>Passo 3: Executar Setup</h4>
+                <p>1. No editor, clique em "Executar" ao lado da função <code>setup</code></p>
+                <p>2. Autorize as permissões:</p>
+                <ul>
+                    <li>Pode aparecer "Google hasn't verified this app"</li>
+                    <li>Clique em "Advanced" (Avançado)</li>
+                    <li>Clique em "Go to [nome do projeto] (unsafe)"</li>
+                    <li>Clique em "Allow" (Permitir)</li>
+                </ul>
+                
+                <h4>Passo 4: Implantar Corretamente</h4>
+                <p>1. Clique em "Deploy" (Implantar) → "New deployment" (Nova implantação)</p>
+                <p>2. Clique no ícone de engrenagem e selecione "Web app"</p>
+                <p>3. Configure:</p>
+                <ul>
+                    <li><strong>Description:</strong> ModemControl Pro API v3.0</li>
+                    <li><strong>Execute as:</strong> Me (seu-email@gmail.com)</li>
+                    <li><strong>Who has access:</strong> Anyone (Qualquer pessoa) ← MUITO IMPORTANTE!</li>
+                </ul>
+                <p>4. Clique em "Deploy" (Implantar)</p>
+                
+                <h4>Passo 5: Testar a Nova URL</h4>
+                <p>1. Copie a URL que aparece após a implantação</p>
+                <p>2. Cole no campo acima e teste</p>
+                <p>3. Deve retornar sucesso ou pelo menos não dar erro 403</p>
+            </div>
+        </div>
+        
+        <div class="alert alert-info">
+            <strong>💡 Dica:</strong> 
+            Se ainda tiver problemas, pode ser necessário recriar o projeto do Google Apps Script 
+            completamente. Às vezes as permissões ficam "presas" e uma nova criação resolve.
+        </div>
+    </div>
+
+    <script>
+        async function testUrl() {
+            const urlInput = document.getElementById('scriptUrl');
+            const resultsDiv = document.getElementById('testResults');
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                resultsDiv.innerHTML = '<div class="alert alert-error">Por favor, insira uma URL para testar.</div>';
+                return;
+            }
+            
+            resultsDiv.innerHTML = '<div class="alert alert-info">🧪 Testando URL... Por favor aguarde.</div>';
+            
+            try {
+                console.log('Testando URL:', url);
+                
+                // Teste 1: GET simples
+                const response = await fetch(url, { method: 'GET' });
+                
+                console.log('Status:', response.status);
+                console.log('Status Text:', response.statusText);
+                
+                if (response.status === 403) {
+                    resultsDiv.innerHTML = `
+                        <div class="alert alert-error">
+                            <h4>❌ Erro 403 Confirmado</h4>
+                            <p><strong>Problema:</strong> Google Apps Script retornando "403 Proibido"</p>
+                            <p><strong>Causa:</strong> Script não está configurado para acesso público</p>
+                            <p><strong>Solução:</strong> Siga os passos acima para reimplantar com permissão "Qualquer pessoa"</p>
+                        </div>
+                        <div class="url-display">
+                            <strong>URL testada:</strong><br>
+                            ${url}
+                        </div>
+                    `;
+                } else if (response.status === 200) {
+                    const responseText = await response.text();
+                    resultsDiv.innerHTML = `
+                        <div class="alert alert-success">
+                            <h4>✅ Conexão Funcionando!</h4>
+                            <p><strong>Status:</strong> ${response.status} ${response.statusText}</p>
+                            <p><strong>Resposta:</strong> ${responseText.substring(0, 200)}${responseText.length > 200 ? '...' : ''}</p>
+                        </div>
+                        <div class="url-display">
+                            <strong>URL funcionando:</strong><br>
+                            ${url}
+                        </div>
+                    `;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="alert alert-warning">
+                            <h4>⚠️ Status Inesperado</h4>
+                            <p><strong>Status:</strong> ${response.status} ${response.statusText}</p>
+                            <p>Verifique se o Google Apps Script está funcionando corretamente.</p>
+                        </div>
+                        <div class="url-display">
+                            <strong>URL testada:</strong><br>
+                            ${url}
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                console.error('Erro no teste:', error);
+                resultsDiv.innerHTML = `
+                    <div class="alert alert-error">
+                        <h4>❌ Erro na Conexão</h4>
+                        <p><strong>Erro:</strong> ${error.message}</p>
+                        <p><strong>Tipo:</strong> ${error.name}</p>
+                        <p>Verifique sua conexão com a internet e se a URL está correta.</p>
+                    </div>
+                    <div class="url-display">
+                        <strong>URL testada:</strong><br>
+                        ${url}
+                    </div>
+                `;
+            }
+        }
+        
+        function openGoogleScript() {
+            window.open('https://script.google.com', '_blank');
+        }
+        
+        function showDetailedInstructions() {
+            const instructionsDiv = document.getElementById('detailedInstructions');
+            const isVisible = instructionsDiv.style.display !== 'none';
+            
+            instructionsDiv.style.display = isVisible ? 'none' : 'block';
+            
+            const button = event.target;
+            button.textContent = isVisible ? '📋 Ver Instruções Detalhadas' : '🔼 Ocultar Instruções';
+        }
+        
+        // Testar automaticamente quando a página carregar
+        window.addEventListener('load', function() {
+            setTimeout(testUrl, 1000);
+        });
+    </script>
+</body>
+</html> 

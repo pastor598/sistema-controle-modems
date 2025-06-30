@@ -1,0 +1,92 @@
+/* CSS Simplificado para Teste do Modo Escuro */
+
+:root {
+    --bg-primary: #f0f2f5;
+    --text-primary: #2d3748;
+    --accent: #3498db;
+    --card-bg: #ffffff;
+    --border: #e2e8f0;
+}
+
+[data-theme="dark"] {
+    --bg-primary: #1a202c;
+    --text-primary: #e2e8f0;
+    --accent: #5dade2;
+    --card-bg: #2d3748;
+    --border: #4a5568;
+}
+
+body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    transition: all 0.3s ease;
+}
+
+.card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    transition: all 0.3s ease;
+}
+
+.stat-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    transition: all 0.3s ease;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--accent);
+}
+
+.stat-label {
+    color: var(--text-primary);
+    opacity: 0.7;
+}
+
+input, select {
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    padding: 10px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.empty-state {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+#theme-toggle {
+    background-color: var(--accent);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+#theme-toggle:hover {
+    opacity: 0.8;
+}
+
+h1, h2, p {
+    color: var(--text-primary);
+    transition: color 0.3s ease;
+} 

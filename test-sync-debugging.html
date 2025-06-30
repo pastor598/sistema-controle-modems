@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico de Sincronização - ModemControl Pro</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #1976d2;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        
+        .alert-error {
+            background: #ffebee;
+            border: 1px solid #f44336;
+            color: #c62828;
+        }
+        
+        .alert-warning {
+            background: #fff3e0;
+            border: 1px solid #ff9800;
+            color: #ef6c00;
+        }
+        
+        .alert-success {
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+            color: #2e7d32;
+        }
+        
+        .alert-info {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            color: #1565c0;
+        }
+        
+        .form-group {
+            margin: 20px 0;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        input[type="url"], input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        button {
+            background: #1976d2;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background: #1565c0;
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .button-success {
+            background: #4caf50;
+        }
+        
+        .button-success:hover {
+            background: #45a049;
+        }
+        
+        .button-warning {
+            background: #ff9800;
+        }
+        
+        .button-warning:hover {
+            background: #f57c00;
+        }
+        
+        .test-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #1976d2;
+        }
+        
+        .test-section h3 {
+            margin-top: 0;
+            color: #1976d2;
+        }
+        
+        .logs-container {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-connected {
+            background: #4caf50;
+        }
+        
+        .status-disconnected {
+            background: #f44336;
+        }
+        
+        .status-testing {
+            background: #ff9800;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .data-preview {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 150px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+        
+        .buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Diagnóstico de Sincronização</h1>
+        <p style="text-align: center; color: #666;">
+            Status: Conectado ✅ | Sincronização: Falhando ❌
+        </p>
+        
+        <div class="alert alert-warning">
+            <strong>⚠️ Problema Identificado:</strong> 
+            O app mostra status "conectado" mas a sincronização não funciona. 
+            Isso geralmente indica que o teste de conexão básico passa, mas há problemas com dados específicos.
+        </div>
+        
+        <div class="form-group">
+            <label for="scriptUrl">🔗 URL do Google Apps Script:</label>
+            <input type="url" id="scriptUrl" value="https://script.google.com/macros/s/AKfycbx0BYoYIBBZ2f_nb8-mbveATvaMflFOGsCe5WEhO5MNTShWlNzlxGVpKErQq90vyQNj/exec" placeholder="Cole aqui sua URL do Google Apps Script">
+        </div>
+        
+        <div class="buttons-grid">
+            <button onclick="testBasicConnection()" id="testBasicBtn">
+                <span class="status-indicator status-disconnected" id="basicStatus"></span>
+                🔍 Teste Básico
+            </button>
+            <button onclick="testSyncFunction()" id="testSyncBtn">
+                <span class="status-indicator status-disconnected" id="syncStatus"></span>
+                🔄 Teste de Sincronização
+            </button>
+            <button onclick="testWithRealData()" id="testDataBtn">
+                <span class="status-indicator status-disconnected" id="dataStatus"></span>
+                📊 Teste com Dados Reais
+            </button>
+            <button onclick="testLargePayload()" id="testLargeBtn">
+                <span class="status-indicator status-disconnected" id="largeStatus"></span>
+                📈 Teste Payload Grande
+            </button>
+        </div>
+        
+        <div class="test-section">
+            <h3>📋 Logs de Diagnóstico</h3>
+            <div id="logsContainer" class="logs-container">
+                Aguardando testes...
+            </div>
+            <button onclick="clearLogs()" class="button-warning">🗑️ Limpar Logs</button>
+            <button onclick="downloadLogs()" class="button-success">💾 Baixar Logs</button>
+        </div>
+        
+        <div id="resultsContainer"></div>
+        
+        <div class="test-section">
+            <h3>🛠️ Ações de Correção</h3>
+            <div class="buttons-grid">
+                <button onclick="generateSampleData()" class="button-success">
+                    📋 Gerar Dados de Teste
+                </button>
+                <button onclick="validateGoogleScript()" class="button-warning">
+                    ✅ Validar Script Google
+                </button>
+                <button onclick="openGoogleScript()" class="button-info">
+                    📝 Abrir Google Apps Script
+                </button>
+                <button onclick="showSolutionSteps()" class="button-success">
+                    🔧 Mostrar Soluções
+                </button>
+            </div>
+        </div>
+        
+        <div id="solutionSteps" style="display: none;">
+            <div class="test-section">
+                <h3>🚀 Soluções para Problemas de Sincronização</h3>
+                
+                <h4>1. 🔄 Problema: Status "Conectado" mas Sincronização Falha</h4>
+                <ul>
+                    <li><strong>Causa:</strong> Teste básico usa GET, sincronização usa POST com dados</li>
+                    <li><strong>Solução:</strong> Verificar se doPost() está implementado corretamente</li>
+                </ul>
+                
+                <h4>2. 📊 Problema: Dados Grandes Não Sincronizam</h4>
+                <ul>
+                    <li><strong>Causa:</strong> Limite de payload do Google Apps Script (6MB)</li>
+                    <li><strong>Solução:</strong> Dividir dados em lotes menores</li>
+                </ul>
+                
+                <h4>3. 🔒 Problema: Erro 403 Durante Sincronização</h4>
+                <ul>
+                    <li><strong>Causa:</strong> Permissões diferentes para GET vs POST</li>
+                    <li><strong>Solução:</strong> Verificar configuração "Executar como" e "Quem tem acesso"</li>
+                </ul>
+                
+                <h4>4. ⏱️ Problema: Timeout na Sincronização</h4>
+                <ul>
+                    <li><strong>Causa:</strong> Processamento demora mais que timeout (30s)</li>
+                    <li><strong>Solução:</strong> Otimizar código do Google Apps Script</li>
+                </ul>
+                
+                <h4>5. 🔧 Problema: Headers CORS Inconsistentes</h4>
+                <ul>
+                    <li><strong>Causa:</strong> Headers CORS configurados apenas para GET</li>
+                    <li><strong>Solução:</strong> Configurar headers para POST também</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let logs = [];
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString('pt-BR');
+            const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
+            logs.push(logEntry);
+            
+            const container = document.getElementById('logsContainer');
+            container.innerHTML = logs.slice(-50).join('\n'); // Últimas 50 entradas
+            container.scrollTop = container.scrollHeight;
+            
+            console.log(logEntry);
+        }
+        
+        function updateStatus(elementId, status) {
+            const element = document.getElementById(elementId);
+            element.className = `status-indicator status-${status}`;
+        }
+        
+        async function testBasicConnection() {
+            const url = document.getElementById('scriptUrl').value.trim();
+            const btn = document.getElementById('testBasicBtn');
+            
+            if (!url) {
+                log('URL não fornecida', 'error');
+                return;
+            }
+            
+            btn.disabled = true;
+            updateStatus('basicStatus', 'testing');
+            log('Iniciando teste básico de conexão...');
+            
+            try {
+                const response = await fetch(url + '?action=test&method=GET', {
+                    method: 'GET'
+                });
+                
+                log(`Resposta recebida: ${response.status} ${response.statusText}`);
+                
+                if (response.status === 200) {
+                    const data = await response.text();
+                    log(`Dados recebidos: ${data.substring(0, 100)}...`);
+                    updateStatus('basicStatus', 'connected');
+                    log('✅ Teste básico PASSOU', 'success');
+                } else {
+                    log(`❌ Teste básico FALHOU: Status ${response.status}`, 'error');
+                    updateStatus('basicStatus', 'disconnected');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro no teste básico: ${error.message}`, 'error');
+                updateStatus('basicStatus', 'disconnected');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+        
+        async function testSyncFunction() {
+            const url = document.getElementById('scriptUrl').value.trim();
+            const btn = document.getElementById('testSyncBtn');
+            
+            if (!url) {
+                log('URL não fornecida', 'error');
+                return;
+            }
+            
+            btn.disabled = true;
+            updateStatus('syncStatus', 'testing');
+            log('Iniciando teste de função de sincronização...');
+            
+            const testData = {
+                action: 'syncAllData',
+                records: [
+                    {
+                        id: 'test-' + Date.now(),
+                        date: new Date().toLocaleDateString('pt-BR'),
+                        model: 'Teste Sincronização',
+                        manufacturer: 'Debug',
+                        quantity: 1,
+                        observations: 'Teste automático de sincronização',
+                        timestamp: new Date().toISOString(),
+                        time: '00:30'
+                    }
+                ],
+                models: [],
+                timestamp: new Date().toISOString(),
+                appVersion: '3.0.0'
+            };
+            
+            try {
+                log('Enviando dados de teste via POST...');
+                log(`Payload: ${JSON.stringify(testData, null, 2).substring(0, 200)}...`);
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testData)
+                });
+                
+                log(`Resposta POST recebida: ${response.status} ${response.statusText}`);
+                
+                if (response.status === 200) {
+                    const result = await response.json();
+                    log(`Resultado da sincronização: ${JSON.stringify(result, null, 2)}`);
+                    
+                    if (result.success) {
+                        updateStatus('syncStatus', 'connected');
+                        log('✅ Teste de sincronização PASSOU', 'success');
+                    } else {
+                        updateStatus('syncStatus', 'disconnected');
+                        log(`❌ Sincronização retornou erro: ${result.error || result.message}`, 'error');
+                    }
+                } else {
+                    const errorText = await response.text();
+                    log(`❌ Erro HTTP ${response.status}: ${errorText}`, 'error');
+                    updateStatus('syncStatus', 'disconnected');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro na sincronização: ${error.message}`, 'error');
+                updateStatus('syncStatus', 'disconnected');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+        
+        async function testWithRealData() {
+            const url = document.getElementById('scriptUrl').value.trim();
+            const btn = document.getElementById('testDataBtn');
+            
+            if (!url) {
+                log('URL não fornecida', 'error');
+                return;
+            }
+            
+            btn.disabled = true;
+            updateStatus('dataStatus', 'testing');
+            log('Testando com dados simulados do localStorage...');
+            
+            // Simular dados reais do ModemControl Pro
+            const realData = {
+                action: 'syncAllData',
+                records: generateTestRecords(5), // 5 registros de teste
+                models: generateTestModels(3),   // 3 modelos de teste
+                timestamp: new Date().toISOString(),
+                appVersion: '3.0.0'
+            };
+            
+            try {
+                log(`Enviando ${realData.records.length} registros e ${realData.models.length} modelos...`);
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(realData)
+                });
+                
+                log(`Resposta recebida: ${response.status} ${response.statusText}`);
+                
+                if (response.status === 200) {
+                    const result = await response.json();
+                    log(`Resultado: ${JSON.stringify(result, null, 2)}`);
+                    
+                    if (result.success) {
+                        updateStatus('dataStatus', 'connected');
+                        log('✅ Teste com dados reais PASSOU', 'success');
+                    } else {
+                        updateStatus('dataStatus', 'disconnected');
+                        log(`❌ Falha com dados reais: ${result.error || result.message}`, 'error');
+                    }
+                } else {
+                    updateStatus('dataStatus', 'disconnected');
+                    log(`❌ Erro HTTP com dados reais: ${response.status}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro com dados reais: ${error.message}`, 'error');
+                updateStatus('dataStatus', 'disconnected');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+        
+        async function testLargePayload() {
+            const url = document.getElementById('scriptUrl').value.trim();
+            const btn = document.getElementById('testLargeBtn');
+            
+            if (!url) {
+                log('URL não fornecida', 'error');
+                return;
+            }
+            
+            btn.disabled = true;
+            updateStatus('largeStatus', 'testing');
+            log('Testando com payload grande (50 registros)...');
+            
+            const largeData = {
+                action: 'syncAllData',
+                records: generateTestRecords(50), // 50 registros
+                models: generateTestModels(10),   // 10 modelos
+                timestamp: new Date().toISOString(),
+                appVersion: '3.0.0'
+            };
+            
+            const payloadSize = JSON.stringify(largeData).length;
+            log(`Tamanho do payload: ${(payloadSize / 1024).toFixed(2)} KB`);
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(largeData)
+                });
+                
+                log(`Resposta recebida: ${response.status} ${response.statusText}`);
+                
+                if (response.status === 200) {
+                    const result = await response.json();
+                    if (result.success) {
+                        updateStatus('largeStatus', 'connected');
+                        log('✅ Teste com payload grande PASSOU', 'success');
+                    } else {
+                        updateStatus('largeStatus', 'disconnected');
+                        log(`❌ Falha com payload grande: ${result.error}`, 'error');
+                    }
+                } else {
+                    updateStatus('largeStatus', 'disconnected');
+                    log(`❌ Erro HTTP com payload grande: ${response.status}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Erro com payload grande: ${error.message}`, 'error');
+                updateStatus('largeStatus', 'disconnected');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+        
+        function generateTestRecords(count) {
+            const records = [];
+            const manufacturers = ['Motorola', 'Samsung', 'Huawei', 'Nokia', 'Ericsson'];
+            const models = ['Model A', 'Model B', 'Model C', 'Model X', 'Model Y'];
+            
+            for (let i = 0; i < count; i++) {
+                records.push({
+                    id: 'rec-' + Date.now() + '-' + i,
+                    date: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR'),
+                    model: models[Math.floor(Math.random() * models.length)],
+                    manufacturer: manufacturers[Math.floor(Math.random() * manufacturers.length)],
+                    quantity: Math.floor(Math.random() * 100) + 1,
+                    observations: `Teste automatizado #${i + 1}`,
+                    timestamp: new Date().toISOString(),
+                    time: `${Math.floor(Math.random() * 2)}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}`
+                });
+            }
+            
+            return records;
+        }
+        
+        function generateTestModels(count) {
+            const models = [];
+            const manufacturers = ['Motorola', 'Samsung', 'Huawei'];
+            
+            for (let i = 0; i < count; i++) {
+                models.push({
+                    id: 'mod-' + Date.now() + '-' + i,
+                    product: `Produto ${i + 1}`,
+                    model: `Modelo ${String.fromCharCode(65 + i)}`,
+                    manufacturer: manufacturers[i % manufacturers.length],
+                    recordingTime: `${Math.floor(Math.random() * 2)}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}`
+                });
+            }
+            
+            return models;
+        }
+        
+        function clearLogs() {
+            logs = [];
+            document.getElementById('logsContainer').innerHTML = 'Logs limpos...';
+        }
+        
+        function downloadLogs() {
+            const blob = new Blob([logs.join('\n')], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `modem-debug-logs-${new Date().toISOString().split('T')[0]}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function generateSampleData() {
+            const data = generateTestRecords(3);
+            const container = document.getElementById('resultsContainer');
+            container.innerHTML = `
+                <div class="test-section">
+                    <h3>📊 Dados de Teste Gerados</h3>
+                    <div class="data-preview">${JSON.stringify(data, null, 2)}</div>
+                    <p>Use estes dados para testar sua integração manualmente.</p>
+                </div>
+            `;
+        }
+        
+        async function validateGoogleScript() {
+            const url = document.getElementById('scriptUrl').value.trim();
+            
+            if (!url) {
+                log('URL não fornecida para validação', 'error');
+                return;
+            }
+            
+            log('Validando configuração do Google Apps Script...');
+            
+            try {
+                // Teste GET
+                const getResponse = await fetch(url + '?action=status');
+                log(`GET /status: ${getResponse.status}`);
+                
+                // Teste POST básico
+                const postResponse = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'test' })
+                });
+                log(`POST /test: ${postResponse.status}`);
+                
+                // Teste OPTIONS (CORS)
+                const optionsResponse = await fetch(url, { method: 'OPTIONS' });
+                log(`OPTIONS /: ${optionsResponse.status}`);
+                
+                log('✅ Validação concluída - verifique os logs acima', 'success');
+                
+            } catch (error) {
+                log(`❌ Erro na validação: ${error.message}`, 'error');
+            }
+        }
+        
+        function openGoogleScript() {
+            window.open('https://script.google.com', '_blank');
+        }
+        
+        function showSolutionSteps() {
+            const element = document.getElementById('solutionSteps');
+            const isVisible = element.style.display !== 'none';
+            element.style.display = isVisible ? 'none' : 'block';
+            
+            event.target.textContent = isVisible ? '🔧 Mostrar Soluções' : '🔼 Ocultar Soluções';
+        }
+        
+        // Executar testes automaticamente
+        window.addEventListener('load', function() {
+            log('Página carregada - Iniciando diagnóstico automático...');
+            setTimeout(() => {
+                testBasicConnection();
+                setTimeout(() => testSyncFunction(), 2000);
+            }, 1000);
+        });
+    </script>
+</body>
+</html> 

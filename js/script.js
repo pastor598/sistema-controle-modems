@@ -558,7 +558,6 @@ function showNotification(message, isError = false) {
         notification.classList.remove('show');
     }, 3000);
 }
-
 // Dados da aplicação
 let records = JSON.parse(localStorage.getItem('modemRecords')) || [];
 let currentDate = new Date();
@@ -614,7 +613,7 @@ const todayBtn = document.getElementById('today');
 const notification = document.getElementById('notification');
 const totalCountEl = document.getElementById('total-count');
 const totalRecordsEl = document.getElementById('total-records');
-const modelCountEl = document.getElementById('model-count');
+const modelCountEl = document.getElementById('model-count-stat');
 const modelCountStat = document.getElementById('model-count-stat');
 const todayCountEl = document.getElementById('today-count');
 const confirmationModal = document.getElementById('confirmation-modal');
@@ -682,9 +681,12 @@ const planningModelSelect = document.getElementById('planning-model-select');
 const planningResult = document.getElementById('planning-result');
 
 let modelToEditId = null;
+let manufacturerChartInstance = null;
+let performanceChartInstance = null;
 
 // Funções
 function populateFilterModelDropdown() {
+    if (!filterModel) return;
     filterModel.innerHTML = '<option value="">Todos os modelos</option>';
 
     const sortedModels = [...modemModels].sort((a, b) => a.produto.localeCompare(b.produto));
@@ -697,7 +699,28 @@ function populateFilterModelDropdown() {
     });
 }
 
+function showNotification(message, isError = false) {
+    notification.innerHTML = `
+        <i class="fas ${isError ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i>
+        <div>${message}</div>
+    `;
+    notification.className = 'notification';
+    
+    if (isError) {
+        notification.classList.add('error');
+    } else {
+        notification.classList.remove('error');
+    }
+    
+    notification.classList.add('show');
+    
+    setTimeout(() => {
+        notification.classList.remove('show');
+    }, 3000);
+}
+
 function populateModelList(searchTerm = '') {
+    if (!modelSelect) return;
     modelSelect.innerHTML = '';
     
     let filteredModels = [...modemModels];
@@ -729,7 +752,7 @@ function populateModelList(searchTerm = '') {
     
     if (filteredModels.length === 0) {
         modelSelect.innerHTML = '<option>Nenhum modelo encontrado</option>';
-        modelCountEl.textContent = 'Total: 0 modelos';
+if (modelCountEl) modelCountEl.textContent = '0';
         return;
     }
     
@@ -740,7 +763,7 @@ function populateModelList(searchTerm = '') {
         modelSelect.appendChild(option);
     });
     
-    modelCountEl.textContent = `Total: ${filteredModels.length} modelos`;
+if (modelCountEl) modelCountEl.textContent = `${filteredModels.length}`;
 }
 
 function addRecord() {
@@ -797,6 +820,10 @@ function addRecord() {
 }
 
 function promptDeleteRecord(id) {
+if (!confirmationModal) {
+        console.error('Modal de confirmação não encontrado!');
+        return;
+    }
     recordToDelete = id;
     confirmationModal.style.display = 'flex';
 }
@@ -819,20 +846,20 @@ function deleteRecord() {
 }
 
 function updateStats() {
-    totalCountEl.textContent = records.length;
-    totalRecordsEl.textContent = records.length;
-    modelCountStat.textContent = modemModels.length;
+if (totalCountEl) totalCountEl.textContent = records.length;
+    if (totalRecordsEl) totalRecordsEl.textContent = records.length;
+    if (modelCountStat) modelCountStat.textContent = modemModels.length;
     
     // Contar gravações de hoje
     const today = new Date().toISOString().split('T')[0];
     const todayRecords = records.filter(record => record.date === today);
     const todayQuantity = todayRecords.reduce((sum, record) => sum + record.quantity, 0);
-    todayCountEl.textContent = todayQuantity;
+if (todayCountEl) todayCountEl.textContent = todayQuantity;
     
     // Atualizar barra de progresso
     const progress = Math.min((todayQuantity / dailyGoal) * 100, 100);
-    progressPercent.textContent = `${Math.round(progress)}%`;
-    dailyProgress.style.width = `${progress}%`;
+    if (progressPercent) progressPercent.textContent = `${Math.round(progress)}%`;
+    if (dailyProgress) dailyProgress.style.width = `${progress}%`;
 
     // Atualizar texto da meta na UI
     const dailyGoalLabel = document.querySelector('.progress-header span:first-child');
@@ -884,8 +911,7 @@ function showRecords(recordsToShow, targetListElement) {
         `;
         targetListElement.appendChild(recordEl);
     });
-    
-    // Adicionar event listeners para os botões de deletar
+// Adicionar event listeners para os botões de deletar
     document.querySelectorAll('.btn-delete').forEach(button => {
         button.addEventListener('click', (e) => {
             const id = button.getAttribute('data-id');
@@ -932,13 +958,12 @@ function applyFilters() {
 }
 
 function resetFilters() {
-    filterDate.value = '';
-    filterModel.value = '';
-    filterManufacturer.value = '';
-    filterQuantity.value = '';
-    globalSearch.value = '';
+if (filterDate) filterDate.value = '';
+    if (filterModel) filterModel.value = '';
+    if (filterManufacturer) filterManufacturer.value = '';
+    if (filterQuantity) filterQuantity.value = '';
+    if (globalSearch) globalSearch.value = '';
     applyFilters();
-    modelToEditId = null;
 }
 
 function formatDate(dateString) {
@@ -1015,20 +1040,34 @@ function updateCalendar() {
 }
 
 function updateManufacturerChart() {
+// Verificar se o elemento existe
+    if (!manufacturerChartEl) {
+        console.warn('Element manufacturer-chart not found');
+        return;
+    }
+    
     // Calcular distribuição por fabricante
     const distribution = {};
     records.forEach(record => {
-        const manufacturer = record.model.fabricante;
-        if (!distribution[manufacturer]) {
-            distribution[manufacturer] = 0;
+        const model = modemModels.find(m => m.id == record.model);
+        if(model) {
+            const manufacturer = model.fabricante;
+            if (!distribution[manufacturer]) {
+                distribution[manufacturer] = 0;
+            }
+            distribution[manufacturer] += record.quantity;
         }
-        distribution[manufacturer] += record.quantity;
     });
     
     // Preparar dados para o gráfico
     const labels = Object.keys(distribution);
     const series = Object.values(distribution);
     
+// Se não há dados, mostrar gráfico vazio
+    if (labels.length === 0) {
+        labels.push('Nenhum dado');
+        series.push(1);
+    }
     // Configurar o gráfico de pizza
     const options = {
         series: series,
@@ -1069,16 +1108,28 @@ function updateManufacturerChart() {
     };
     
     // Renderizar o gráfico
-    if (window.manufacturerChart) {
-        window.manufacturerChart.destroy();
+if (manufacturerChartInstance) {
+        manufacturerChartInstance.destroy();
     }
     
-    window.manufacturerChart = new ApexCharts(manufacturerChartEl, options);
-    window.manufacturerChart.render();
+    // Verificar se ApexCharts está disponível
+    if (typeof ApexCharts === 'undefined') {
+        console.error('ApexCharts não está carregado');
+        return;
+    }
+    
+    manufacturerChartInstance = new ApexCharts(manufacturerChartEl, options);
+    manufacturerChartInstance.render();
 }
 
 function updatePerformanceChart() {
-    const range = parseInt(chartRange.value);
+    // Verificar se o elemento existe
+    if (!performanceChartEl) {
+        console.warn('Element performance-chart not found');
+        return;
+    }
+    
+    const range = parseInt(chartRange?.value || 7);
     const today = new Date();
     const labels = [];
     const data = [];
@@ -1149,35 +1200,56 @@ function updatePerformanceChart() {
     };
     
     // Renderizar o gráfico
-    if (window.performanceChart) {
-        window.performanceChart.destroy();
+if (performanceChartInstance) {
+        performanceChartInstance.destroy();
     }
     
-    window.performanceChart = new ApexCharts(performanceChartEl, options);
-    window.performanceChart.render();
+    // Verificar se ApexCharts está disponível
+    if (typeof ApexCharts === 'undefined') {
+        console.error('ApexCharts não está carregado');
+        return;
+    }
+    
+    performanceChartInstance = new ApexCharts(performanceChartEl, options);
+    performanceChartInstance.render();
 }
 
 function exportToPDF() {
+    if (filteredRecords.length === 0) {
+        showNotification('Nenhum registro para exportar!', true);
+        return;
+    }
+    
     const { jsPDF } = window.jspdf;
-    // Passar um objeto de configuração vazio para desativar workers
-    const doc = new jsPDF({});
-
-    const tableColumn = ["Data", "Modelo", "Fabricante", "Quantidade"];
-    const tableRows = [];
+    const doc = new jsPDF();
+    
+    // Título
+    doc.setFontSize(18);
+    doc.text('Relatório de Gravações de Modems', 105, 15, null, null, 'center');
+    
+    // Data de emissão
+    doc.setFontSize(10);
+    doc.text(`Emitido em: ${new Date().toLocaleDateString('pt-BR')}`, 105, 22, null, null, 'center');
+    
+    // Tabela
+    const tableData = [
+        ['Data', 'Modelo', 'Fabricante', 'Quantidade', 'Observações']
+    ];
     
     filteredRecords.forEach(record => {
-        tableRows.push([
+        tableData.push([
             formatDate(record.date),
             record.model.modelo,
             record.model.fabricante,
-            record.quantity.toString()
+            record.quantity.toString(),
+            record.notes || ''
         ]);
     });
     
     // Adicionar tabela
     doc.autoTable({
-        head: [tableColumn],
-        body: tableRows,
+head: [tableData[0]],
+        body: tableData.slice(1),
         startY: 30,
         theme: 'grid',
         headStyles: { 
@@ -1244,7 +1316,7 @@ function openTaskModal() {
     // Definir data padrão para amanhã
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    if (taskDue) taskDue.value = tomorrow.toISOString().split('T')[0];
+if (taskDue) taskDue.value = tomorrow.toISOString().split('T')[0];
     
     if (taskModal) {
         taskModal.classList.add('show');
@@ -1260,8 +1332,7 @@ function saveTask() {
     
     // Aqui você salvaria a tarefa no sistema
     showNotification('Tarefa salva com sucesso!');
-    
-    if (taskModal) {
+if (taskModal) {
         taskModal.classList.remove('show');
         taskModal.style.display = 'none';
     }
@@ -1273,10 +1344,36 @@ function saveTask() {
     // Definir data padrão para amanhã
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    if (taskDue) taskDue.value = tomorrow.toISOString().split('T')[0];
+taskDue.value = tomorrow.toISOString().split('T')[0];
     
-    if (taskPriority) taskPriority.value = 'medium';
-    if (taskAssignee) taskAssignee.value = 'user1';
+    taskPriority.value = 'medium';
+    taskAssignee.value = 'user1';
+}
+
+function navigateTo(viewId) {
+    // Esconder todas as views
+    pageViews.forEach(view => view.classList.remove('active-view'));
+    
+    // Remover a classe 'active' de todos os links
+    navLinks.forEach(link => link.classList.remove('active'));
+
+    // Mostrar a view selecionada
+    const targetView = document.getElementById(viewId);
+    if (targetView) {
+        targetView.classList.add('active-view');
+    }
+
+    // Atualizar o link ativo
+    const targetLink = document.getElementById(`nav-${viewId.split('-')[1]}`);
+    if (targetLink) {
+        targetLink.classList.add('active');
+    }
+
+    // Atualizar o título do cabeçalho
+    if (targetLink) {
+        const titleText = targetLink.querySelector('span').textContent;
+        headerTitle.textContent = `${titleText}`;
+    }
 }
 
 function renderModelsList() {
@@ -1299,7 +1396,7 @@ function renderModelsList() {
                 </div>
             </div>
             <div class="actions">
-                <button class="btn-secondary" style="padding: 8px 15px; font-size: 0.9rem;" onclick="openEditModal(${model.id})">
+<button class="btn-secondary" style="padding: 8px 15px; font-size: 0.9rem;" onclick="openEditModal(${model.id})">
                     <i class="fas fa-edit"></i>
                 </button>
                 <button class="btn-delete" onclick="deleteModel(${model.id})">
@@ -1432,6 +1529,7 @@ function clearAllData() {
 }
 
 function populatePlanningDropdown() {
+if (!planningModelSelect) return;
     planningModelSelect.innerHTML = '<option value="">-- Escolha um modelo --</option>';
     const sortedModels = [...modemModels].sort((a, b) => a.produto.localeCompare(b.produto));
     sortedModels.forEach(model => {
@@ -1865,4 +1963,4 @@ document.addEventListener('DOMContentLoaded', function() {
 // Hook para sincronização automática com Google Sheets será configurado via google-sheets-integration.js
 
 // Inicializar a aplicação
-initApp(); 
+initApp();

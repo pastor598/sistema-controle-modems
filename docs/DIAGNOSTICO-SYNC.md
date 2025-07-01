@@ -7,12 +7,15 @@ O sistema agora inclui um diagnóstico avançado que **automaticamente detecta e
 ## 🚀 Como Usar
 
 ### 1. Diagnóstico Automático
+
 O sistema executa automaticamente um diagnóstico quando:
+
 - Há erros de sincronização detectados
 - A URL do Google Apps Script não está configurada
 - O botão "Testar Conexão" é clicado
 
 ### 2. Comandos Manuais no Console
+
 Abra o console do navegador (F12) e execute:
 
 ```javascript
@@ -29,35 +32,44 @@ window.openGoogleScriptHelp()
 ## 🔍 Tipos de Problemas Detectados
 
 ### ❌ URL Não Configurada
+
 **Sintomas:** Status "Desconectado", nenhuma URL nas configurações
 **Solução:** Sistema solicita a URL e orienta configuração
 
 ### ❌ Erro 403 (Forbidden)
+
 **Sintomas:** "Failed to fetch", erro 403 nas requisições
 **Soluções Automáticas:**
+
 - Reimplantar Google Apps Script como "Anyone with the link"
 - Executar função setup() novamente
 - Verificar permissões
 
 ### ❌ Erro CORS
+
 **Sintomas:** Erro CORS em requisições
 **Soluções Automáticas:**
+
 - Verificar headers CORS no Google Apps Script
 - Tentar modo no-cors como fallback
 
 ### ❌ Erro 404 (Not Found)
+
 **Sintomas:** URL não encontrada
 **Soluções Automáticas:**
+
 - Verificar se script está implantado
 - Validar URL da implantação
 
 ## 🎯 Interface Visual
 
 ### Cards de Diagnóstico
+
 - **Verde:** ✅ Conexão estabelecida com sucesso
 - **Vermelho:** ❌ Problema detectado com soluções
 
 ### Botões de Ação
+
 - **🔧 Correção Automática:** Tenta resolver problemas automaticamente
 - **📚 Ajuda:** Abre guia completo de configuração
 - **📄 Exportar Relatório:** Salva diagnóstico detalhado
@@ -65,6 +77,7 @@ window.openGoogleScriptHelp()
 ## ⚙️ Funcionalidades Avançadas
 
 ### Auto-Diagnóstico
+
 ```javascript
 // Executa automaticamente ao carregar a página se há problemas
 setTimeout(() => {
@@ -75,7 +88,9 @@ setTimeout(() => {
 ```
 
 ### Fallback Inteligente
+
 Se o sistema de diagnóstico não estiver disponível, usa teste básico:
+
 ```javascript
 async basicConnectionTest(url) {
     // Teste simples de conectividade
@@ -85,8 +100,10 @@ async basicConnectionTest(url) {
 ```
 
 ### Logs Estruturados
+
 Todos os testes geram logs detalhados no console:
-```
+
+```text
 🔍 DIAGNÓSTICO DE SINCRONIZAÇÃO
 📋 URL configurada: https://script.google.com/...
 🔗 Formato da URL: VÁLIDO
@@ -98,6 +115,7 @@ Todos os testes geram logs detalhados no console:
 ## 🛠️ Configuração do Google Apps Script
 
 ### Passo a Passo Automatizado
+
 1. O sistema detecta se a URL não está configurada
 2. Solicita a URL via prompt
 3. Valida o formato automaticamente
@@ -105,6 +123,7 @@ Todos os testes geram logs detalhados no console:
 5. Orienta sobre problemas encontrados
 
 ### Validação Inteligente
+
 ```javascript
 // Valida formato da URL
 const isValidUrl = /^https:\/\/script\.google\.com\/macros\/s\/[a-zA-Z0-9_-]+\/exec$/.test(scriptUrl)
@@ -119,12 +138,14 @@ const isValidUrl = /^https:\/\/script\.google\.com\/macros\/s\/[a-zA-Z0-9_-]+\/e
 ## 📊 Relatórios e Logs
 
 ### Exportação de Diagnóstico
+
 - Salva relatório completo em arquivo .txt
 - Inclui todos os testes realizados
 - Timestamp e detalhes técnicos
 - Recomendações específicas
 
 ### Monitoramento Contínuo
+
 - Status atualizado a cada 30 segundos
 - Detecção automática de problemas
 - Notificações visuais de mudanças
@@ -132,11 +153,13 @@ const isValidUrl = /^https:\/\/script\.google\.com\/macros\/s\/[a-zA-Z0-9_-]+\/e
 ## 🎨 Estilos e Responsividade
 
 ### Tema Claro/Escuro
+
 - Cards adaptativos ao tema
 - Cores semânticas (verde/vermelho)
 - Animações suaves
 
 ### Mobile-First
+
 - Interface responsiva
 - Botões adaptáveis
 - Layout flexível em dispositivos móveis
@@ -144,11 +167,13 @@ const isValidUrl = /^https:\/\/script\.google\.com\/macros\/s\/[a-zA-Z0-9_-]+\/e
 ## 🔗 Integração
 
 ### Compatibilidade Total
+
 - Funciona com sistema existente
 - Não interfere em funcionalidades
 - Melhora a experiência do usuário
 
 ### Override Inteligente
+
 ```javascript
 // Substitui função original mantendo compatibilidade
 const originalTestConnection = window.googleSheetsIntegration.testConnection
@@ -165,4 +190,4 @@ window.googleSheetsIntegration.testConnection = async function() {
 ❌ **ANTES:** "Failed to fetch" - usuário sem direção
 ✅ **AGORA:** Diagnóstico automático + soluções visuais + correção automática
 
-O sistema é **100% automatizado** e **user-friendly**, eliminando a necessidade de conhecimento técnico para resolver problemas de sincronização! 
+O sistema é **100% automatizado** e **user-friendly**, eliminando a necessidade de conhecimento técnico para resolver problemas de sincronização!

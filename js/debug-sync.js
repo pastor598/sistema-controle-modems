@@ -283,20 +283,22 @@ document.addEventListener('DOMContentLoaded', () => {
 // Override the test connection function to use diagnostic
 if (window.googleSheetsIntegration) {
     const originalTestConnection = window.googleSheetsIntegration.testConnection;
+    const integrationInstance = window.googleSheetsIntegration;
+    
     window.googleSheetsIntegration.testConnection = async function() {
         try {
             const result = await window.diagnoseSync();
             window.showDiagnosticResults(result);
             
             if (result.status === 'success') {
-                this.updateStatus('✅ Conectado', 'success');
+                integrationInstance.updateStatus('✅ Conectado', 'success');
                 return result;
             } else {
-                this.updateStatus('❌ ' + result.issue, 'error');
+                integrationInstance.updateStatus('❌ ' + result.issue, 'error');
                 throw new Error(result.issue);
             }
         } catch (error) {
-            this.updateStatus('❌ Erro: ' + error.message, 'error');
+            integrationInstance.updateStatus('❌ Erro: ' + error.message, 'error');
             throw error;
         }
     };

@@ -365,6 +365,57 @@ class GoogleSheetsIntegration {
         this.updateConnectionIndicator(this.isConnected && this.isOnline);
     }
 
+    // Atualizar status da conexão - método que estava faltando
+    updateStatus(message, type = 'info') {
+        console.log(`🔄 Status: ${message} (${type})`);
+        
+        // Tentar encontrar elemento de status
+        const statusElements = [
+            document.getElementById('connection-status'),
+            document.getElementById('sync-status'),
+            document.querySelector('.connection-status'),
+            document.querySelector('.sync-status'),
+            document.querySelector('[data-sync-status]')
+        ];
+        
+        let statusElement = null;
+        for (const element of statusElements) {
+            if (element) {
+                statusElement = element;
+                break;
+            }
+        }
+        
+        if (statusElement) {
+            statusElement.textContent = message;
+            statusElement.className = `status-${type}`;
+            
+            // Adicionar classes visuais
+            statusElement.classList.remove('status-success', 'status-error', 'status-warning', 'status-info');
+            statusElement.classList.add(`status-${type}`);
+        } else {
+            // Se não encontrou elemento específico, usar showActionFeedback como fallback
+            const isError = type === 'error';
+            this.showActionFeedback(message, isError);
+        }
+        
+        // Também atualizar o indicador de conexão baseado no tipo
+        if (type === 'success') {
+            this.updateConnectionIndicator(true);
+        } else if (type === 'error') {
+            this.updateConnectionIndicator(false);
+        }
+        
+        // Log estruturado para debugging
+        const logData = {
+            timestamp: new Date().toISOString(),
+            message: message,
+            type: type,
+            elementFound: !!statusElement
+        };
+        console.log('📊 Status Update:', logData);
+    }
+
     // Calcular tempo decorrido
     getTimeAgo(date) {
         const now = new Date();

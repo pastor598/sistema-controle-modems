@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Google Apps Script</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .step {
+            margin: 20px 0;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            background: #f8f9fa;
+        }
+        .success { border-left-color: #2ecc71; background: #d4edda; }
+        .error { border-left-color: #e74c3c; background: #f8d7da; }
+        .warning { border-left-color: #f39c12; background: #fff3cd; }
+        input[type="url"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover { background: #2980b9; }
+        button:disabled { background: #bdc3c7; cursor: not-allowed; }
+        #resultado {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Teste de Conectividade - Google Apps Script</h1>
+        
+        <div class="step warning">
+            <h3>📋 Antes de começar:</h3>
+            <ol>
+                <li>Acesse <a href="https://script.google.com" target="_blank" rel="noopener">script.google.com</a></li>
+                <li>Crie um novo projeto</li>
+                <li>Cole o código do arquivo <code>google-apps-script.gs</code></li>
+                <li>Execute a função <code>setup</code></li>
+                <li>Implante como "Aplicativo da web"</li>
+                <li>Cole a URL gerada abaixo</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h3>🌐 URL do Google Apps Script:</h3>
+            <input type="url" id="scriptUrl" placeholder="https://script.google.com/macros/s/AKfycbx.../exec">
+            <button onclick="testarConexao()">🔍 Testar Conexão</button>
+        </div>
+
+        <div id="resultado"></div>
+    </div>
+
+    <script>
+        async function testarConexao() {
+            const url = document.getElementById('scriptUrl').value;
+            const resultado = document.getElementById('resultado');
+            
+            if (!url) {
+                mostrarResultado('❌ Por favor, insira a URL do Google Apps Script', 'error');
+                return;
+            }
+
+            mostrarResultado('🔄 Testando conexão...', 'warning');
+
+            try {
+                console.log('🔍 Iniciando teste de conectividade...');
+                console.log('📋 URL:', url);
+
+                // Teste 1: GET request (deve funcionar se o script estiver correto)
+                const response = await fetch(url, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+
+                console.log('📡 Status da resposta:', response.status);
+                console.log('✅ Headers:', [...response.headers.entries()]);
+
+                if (response.ok) {
+                    const data = await response.text();
+                    console.log('📄 Dados recebidos:', data);
+                    
+                    try {
+                        const jsonData = JSON.parse(data);
+                        mostrarResultado(`✅ SUCESSO! Google Apps Script funcionando!\n\n📊 Resposta:\n${JSON.stringify(jsonData, null, 2)}`, 'success');
+                        
+                        // Teste 2: POST request (teste real)
+                        setTimeout(() => testarPOST(url), 2000);
+                        
+                    } catch (e) {
+                        mostrarResultado(`⚠️ Script respondeu, mas não é JSON válido:\n${data}`, 'warning');
+                    }
+                } else {
+                    mostrarResultado(`❌ Erro HTTP ${response.status}: ${response.statusText}`, 'error');
+                }
+
+            } catch (error) {
+                console.error('❌ Erro no teste:', error);
+                
+                if (error.message.includes('CORS')) {
+                    mostrarResultado(`❌ ERRO CORS!\n\nO Google Apps Script não está configurado corretamente.\n\nSoluções:\n1. Verifique se copiou o código completo\n2. Execute a função 'setup' no Google Apps Script\n3. Reimplante como 'Aplicativo da web'\n4. Certifique-se que 'Quem tem acesso' está como 'Qualquer pessoa'`, 'error');
+                } else if (error.message.includes('Failed to fetch')) {
+                    mostrarResultado(`❌ FALHA NA CONEXÃO!\n\nPossíveis causas:\n1. URL incorreta\n2. Google Apps Script não implantado\n3. Problemas de rede\n\nVerifique a URL e tente novamente.`, 'error');
+                } else {
+                    mostrarResultado(`❌ Erro inesperado: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        async function testarPOST(url) {
+            try {
+                mostrarResultado(document.getElementById('resultado').textContent + '\n\n🔄 Testando envio de dados (POST)...', 'warning');
+
+                const testData = {
+                    modelo: 'Teste',
+                    quantidade: 1,
+                    observacoes: 'Teste de conectividade'
+                };
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testData)
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    mostrarResultado(document.getElementById('resultado').textContent + `\n\n✅ POST SUCESSO!\n📊 Dados enviados e salvos na planilha!\n${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    mostrarResultado(document.getElementById('resultado').textContent + `\n\n⚠️ POST falhou: ${response.status}`, 'warning');
+                }
+
+            } catch (error) {
+                mostrarResultado(document.getElementById('resultado').textContent + `\n\n❌ Erro no POST: ${error.message}`, 'error');
+            }
+        }
+
+        function mostrarResultado(texto, tipo) {
+            const resultado = document.getElementById('resultado');
+            resultado.textContent = texto;
+            resultado.className = tipo;
+        }
+
+        // Auto-preencher URL se estiver nas configurações
+        window.addEventListener('load', () => {
+            const savedUrl = localStorage.getItem('googleAppsScriptUrl');
+            if (savedUrl) {
+                document.getElementById('scriptUrl').value = savedUrl;
+            }
+        });
+
+        // Salvar URL quando alterada
+        document.getElementById('scriptUrl').addEventListener('change', (e) => {
+            localStorage.setItem('googleAppsScriptUrl', e.target.value);
+        });
+    </script>
+</body>
+</html> 

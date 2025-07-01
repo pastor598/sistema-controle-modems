@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de CORS - Google Apps Script</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input[type="text"],
+        input[type="number"],
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        
+        button.primary {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        button.primary:hover {
+            background-color: #2980b9;
+        }
+        
+        button.secondary {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        button.secondary:hover {
+            background-color: #27ae60;
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .card {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #6c757d;
+        }
+        
+        .card.error {
+            background-color: #fff8f8;
+            border-left-color: #dc3545;
+        }
+        
+        .card h3 {
+            margin-top: 0;
+            color: #343a40;
+        }
+        
+        code {
+            background-color: #f1f1f1;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Teste de CORS - Google Apps Script</h1>
+        
+        <div class="form-group">
+            <label for="scriptUrl">URL do Google Apps Script:</label>
+            <input type="text" id="scriptUrl" placeholder="https://script.google.com/macros/s/AKfycbx.../exec">
+        </div>
+        
+        <div class="form-group">
+            <label for="modelo">Modelo:</label>
+            <input type="text" id="modelo" value="Teste">
+        </div>
+        
+        <div class="form-group">
+            <label for="quantidade">Quantidade:</label>
+            <input type="number" id="quantidade" value="1" min="1">
+        </div>
+        
+        <div class="form-group">
+            <label for="observacoes">Observações:</label>
+            <textarea id="observacoes" rows="3">Teste de conexão</textarea>
+        </div>
+        
+        <div class="buttons">
+            <button id="btnTestar" class="primary">🔍 Testar Conexão</button>
+            <button id="btnEnviar" class="secondary">📤 Enviar Dados</button>
+        </div>
+        
+        <div id="status" class="status" style="display: none;"></div>
+        
+        <div id="instrucoes" style="display: none;"></div>
+    </div>
+    
+    <script src="js/cors-fix.js"></script>
+</body>
+</html> 

@@ -1,0 +1,107 @@
+/* ===== CORREÇÕES DE CENTRALIZAÇÃO ===== */
+
+/* Remover o layout de grid e centralizar o body */
+body {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    grid-template-columns: none !important;
+    grid-template-rows: none !important;
+    grid-template-areas: none !important;
+}
+
+/* Esconder sidebar completamente */
+.sidebar {
+    display: none !important;
+}
+
+/* Garantir que o main-app seja centralizado */
+.main-app {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+}
+
+/* Container centralizado com largura máxima */
+.container {
+    width: 100% !important;
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+    padding: 40px 20px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+}
+
+/* Page-view com largura controlada */
+.page-view {
+    width: 100% !important;
+    max-width: 1200px !important;
+    margin: 0 auto !important;
+}
+
+/* Centralizar títulos */
+.page-title {
+    text-align: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+}
+
+/* Tabs centralizadas */
+.tabs {
+    justify-content: center !important;
+}
+
+/* Grid de estatísticas centralizado */
+.stats-grid {
+    max-width: 1200px !important;
+    margin: 0 auto 30px !important;
+}
+
+/* Dashboard centralizado */
+.dashboard {
+    max-width: 1200px !important;
+    margin: 0 auto 30px !important;
+}
+
+/* Footer centralizado */
+footer {
+    justify-content: center !important;
+    margin-top: auto !important;
+}
+
+/* Header responsivo */
+header {
+    width: 100% !important;
+}
+
+/* Media queries para telas menores */
+@media (max-width: 992px) {
+    .container {
+        padding: 20px !important;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .dashboard {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 1.8rem !important;
+    }
+    
+    .tabs {
+        flex-wrap: wrap !important;
+    }
+    
+    .tab {
+        font-size: 0.9rem !important;
+        padding: 8px 15px !important;
+    }
+} 

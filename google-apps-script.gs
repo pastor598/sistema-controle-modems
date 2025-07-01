@@ -194,4 +194,198 @@ function findSpreadsheet() {
   } else {
     throw new Error('Planilha não encontrada. Execute setup() primeiro.');
   }
+}
+
+// ==================== TRIGGERS AUTOMÁTICOS ====================
+
+/**
+ * Configurar triggers automáticos para atualização
+ * Execute esta função UMA VEZ após o setup
+ */
+function setupTriggers() {
+  try {
+    Logger.log('🔧 Configurando triggers automáticos...');
+    
+    // Remover triggers existentes primeiro
+    deleteTriggers();
+    
+    // Trigger 1: Atualização a cada 15 minutos
+    ScriptApp.newTrigger('autoUpdate')
+      .timeBased()
+      .everyMinutes(15)
+      .create();
+    
+    // Trigger 2: Atualização diária às 9h
+    ScriptApp.newTrigger('dailyUpdate')
+      .timeBased()
+      .everyDays(1)
+      .atHour(9)
+      .create();
+    
+    // Trigger 3: Backup semanal (domingos às 10h)
+    ScriptApp.newTrigger('weeklyBackup')
+      .timeBased()
+      .onWeekDay(ScriptApp.WeekDay.SUNDAY)
+      .atHour(10)
+      .create();
+    
+    Logger.log('✅ Triggers configurados com sucesso!');
+    Logger.log('📅 Atualização: a cada 15 minutos');
+    Logger.log('📅 Atualização diária: 9h');
+    Logger.log('📅 Backup semanal: Domingos 10h');
+    
+    return { success: true, message: 'Triggers configurados!' };
+    
+  } catch (error) {
+    Logger.log('❌ Erro ao configurar triggers: ' + error.toString());
+    return { success: false, error: error.toString() };
+  }
+}
+
+/**
+ * Remover todos os triggers existentes
+ */
+function deleteTriggers() {
+  try {
+    const triggers = ScriptApp.getProjectTriggers();
+    Logger.log('🗑️ Removendo ' + triggers.length + ' triggers existentes...');
+    
+    triggers.forEach(trigger => {
+      ScriptApp.deleteTrigger(trigger);
+    });
+    
+    Logger.log('✅ Triggers removidos');
+    
+  } catch (error) {
+    Logger.log('❌ Erro ao remover triggers: ' + error.toString());
+  }
+}
+
+/**
+ * Listar triggers ativos
+ */
+function listTriggers() {
+  try {
+    const triggers = ScriptApp.getProjectTriggers();
+    Logger.log('📋 Triggers ativos: ' + triggers.length);
+    
+    triggers.forEach((trigger, index) => {
+      Logger.log(`${index + 1}. Função: ${trigger.getHandlerFunction()}`);
+      Logger.log(`   Tipo: ${trigger.getEventType()}`);
+      Logger.log(`   Fonte: ${trigger.getTriggerSource()}`);
+    });
+    
+    return triggers.map(trigger => ({
+      function: trigger.getHandlerFunction(),
+      type: trigger.getEventType(),
+      source: trigger.getTriggerSource()
+    }));
+    
+  } catch (error) {
+    Logger.log('❌ Erro ao listar triggers: ' + error.toString());
+    return [];
+  }
+}
+
+/**
+ * Atualização automática (executada pelos triggers)
+ */
+function autoUpdate() {
+  try {
+    Logger.log('🔄 Executando atualização automática...');
+    
+    if (!SPREADSHEET_ID) {
+      findSpreadsheet();
+    }
+    
+    // Atualizar timestamp para forçar refresh
+    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const timestamp = new Date().toISOString();
+    
+    // Adicionar metadata para forçar atualização
+    spreadsheet.addDeveloperMetadata('lastAutoUpdate', timestamp);
+    
+    Logger.log('✅ Atualização automática concluída: ' + timestamp);
+    
+  } catch (error) {
+    Logger.log('❌ Erro na atualização automática: ' + error.toString());
+  }
+}
+
+/**
+ * Atualização diária (mais completa)
+ */
+function dailyUpdate() {
+  try {
+    Logger.log('📅 Executando atualização diária...');
+    
+    if (!SPREADSHEET_ID) {
+      findSpreadsheet();
+    }
+    
+    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sheet = spreadsheet.getSheetByName('Gravações');
+    
+    // Forçar recálculo das fórmulas
+    sheet.getDataRange().setValue(sheet.getDataRange().getValue());
+    
+    // Atualizar metadata
+    const timestamp = new Date().toISOString();
+    spreadsheet.addDeveloperMetadata('lastDailyUpdate', timestamp);
+    
+    Logger.log('✅ Atualização diária concluída: ' + timestamp);
+    
+  } catch (error) {
+    Logger.log('❌ Erro na atualização diária: ' + error.toString());
+  }
+}
+
+/**
+ * Backup semanal
+ */
+function weeklyBackup() {
+  try {
+    Logger.log('💾 Executando backup semanal...');
+    
+    if (!SPREADSHEET_ID) {
+      findSpreadsheet();
+    }
+    
+    const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+    
+    // Criar cópia de backup
+    const backupName = `ModemControl Pro - Backup ${new Date().toISOString().split('T')[0]}`;
+    const backup = spreadsheet.copy(backupName);
+    
+    // Mover para pasta de backups (opcional)
+    const folders = DriveApp.getFoldersByName('ModemControl Backups');
+    if (folders.hasNext()) {
+      const backupFolder = folders.next();
+      DriveApp.getFileById(backup.getId()).moveTo(backupFolder);
+    }
+    
+    Logger.log('✅ Backup criado: ' + backupName);
+    Logger.log('🔗 ID: ' + backup.getId());
+    
+  } catch (error) {
+    Logger.log('❌ Erro no backup semanal: ' + error.toString());
+  }
+}
+
+/**
+ * Trigger personalizado para sincronização com sistema externo
+ */
+function customSyncTrigger() {
+  try {
+    Logger.log('🔄 Trigger personalizado executado...');
+    
+    // Aqui você pode adicionar lógica específica
+    // Por exemplo, chamar APIs externas, validar dados, etc.
+    
+    const timestamp = new Date().toISOString();
+    Logger.log('✅ Trigger personalizado concluído: ' + timestamp);
+    
+  } catch (error) {
+    Logger.log('❌ Erro no trigger personalizado: ' + error.toString());
+  }
 } 

@@ -769,8 +769,49 @@
     
     </div> <!-- Fim do main-app -->
     
-    <script src="js/script.js" defer></script>
-    <script src="js/google-sheets-integration.js" defer></script>
-    <script src="js/debug-sync.js" defer></script>
+    <!-- Scripts -->
+    <script src="js/script.js"></script>
+    <script src="js/google-sheets-integration.js"></script>
+    <script src="js/debug-sync.js"></script>
+    <script src="js/github-integration.js"></script>
+    
+    <!-- GitHub Integration Section -->
+    <div id="github-integration-section" class="card" style="display: none;">
+        <div class="card-header">
+            <h3>🔗 Integração GitHub</h3>
+            <div class="card-actions">
+                <button id="github-sync-btn" class="btn btn-primary">
+                    <i class="fas fa-sync"></i> Sincronizar GitHub
+                </button>
+                <button id="github-export-btn" class="btn btn-secondary">
+                    <i class="fas fa-upload"></i> Exportar para GitHub
+                </button>
+            </div>
+        </div>
+        
+        <div class="card-content">
+            <div class="github-status-container">
+                <div id="github-status">
+                    <div class="github-status">
+                        <span class="status-indicator disconnected"></span>
+                        <span>Nunca sincronizado</span>
+                    </div>
+                </div>
+                
+                <div class="github-controls">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="github-auto-sync">
+                        <span>Auto-sync a cada 30 minutos</span>
+                    </label>
+                </div>
+                
+                <div class="github-info">
+                    <p><strong>📊 Dados CSV:</strong> <a href="https://raw.githubusercontent.com/pastor598/sistema-controle-modems/main/data/modem-data.csv" target="_blank" rel="noopener">Ver dados atuais</a></p>
+                    <p><strong>📋 Metadata:</strong> <a href="https://raw.githubusercontent.com/pastor598/sistema-controle-modems/main/data/metadata.json" target="_blank" rel="noopener">Ver informações</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html> 

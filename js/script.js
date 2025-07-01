@@ -1970,5 +1970,22 @@ document.addEventListener('DOMContentLoaded', function() {
 // Hook para sincronizar automaticamente quando novos registros forem adicionados
 // Hook para sincronização automática com Google Sheets será configurado via google-sheets-integration.js
 
+// Inicializar integração GitHub quando o DOM estiver carregado
+document.addEventListener('DOMContentLoaded', function() {
+    // ... existing code ...
+    
+    // Inicializar GitHub Integration se disponível
+    if (typeof GitHubIntegration !== 'undefined') {
+        window.githubIntegration = new GitHubIntegration();
+        console.log('🔗 GitHub Integration inicializada');
+        
+        // Mostrar seção GitHub nas configurações
+        const githubSection = document.getElementById('github-integration-section');
+        if (githubSection) {
+            githubSection.style.display = 'block';
+        }
+    }
+});
+
 // Inicializar a aplicação
 initApp();

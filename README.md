@@ -1,100 +1,119 @@
-# Sistema de Controle de Gravação de Modems
+# 📊 Sistema de Controle de Modems
 
-## 📋 Descrição
+Sistema web moderno para controle e gravação de modems com sincronização Google Sheets.
 
-Sistema web moderno para controle e monitoramento de gravações de modems, desenvolvido com HTML5, CSS3 e JavaScript vanilla. O projeto conta com uma interface elegante usando glassmorphism e tons de azul escuro/preto.
+## 🚀 Características
 
-## ✨ Funcionalidades
-
-- 📊 **Dashboard Interativo**: Visualização de estatísticas em tempo real
-- 📅 **Calendário de Gravações**: Controle de sessões de gravação por data
-- 🔍 **Sistema de Busca**: Pesquisa avançada de modelos e registros
-- 📈 **Gráficos e Relatórios**: Visualização de dados com ApexCharts
-- 🎨 **Interface Moderna**: Design com glassmorphism e animações suaves
-- 📱 **Responsivo**: Compatível com desktop, tablet e mobile
-- ♿ **Acessibilidade**: Seguindo padrões WCAG com aria-labels
-- 🌙 **Modo Escuro**: Interface otimizada para uso prolongado
-
-## 🚀 Tecnologias Utilizadas
-
-- **HTML5**: Estrutura semântica
-- **CSS3**: Glassmorphism, Grid, Flexbox, Animações
-- **JavaScript ES6+**: Funcionalidades interativas
-- **ApexCharts**: Gráficos interativos
-- **Font Awesome**: Ícones
-- **Google Fonts**: Tipografia (Roboto, Poppins)
+- **Interface Moderna**: Design responsivo com tema escuro/claro
+- **Sincronização Google Sheets**: Backup automático dos dados
+- **Dashboard Interativo**: Gráficos e estatísticas em tempo real
+- **Sistema de Login**: Autenticação segura
+- **PWA Ready**: Funciona offline como aplicativo
 
 ## 📁 Estrutura do Projeto
 
 ```
-projeto-modem-recording/
-├── index.html          # Página principal
-├── css/
-│   └── style.css      # Estilos principais
-├── js/
-│   └── script.js      # Lógica da aplicação
-└── README.md          # Documentação
+├── 📄 index.html              # Página principal
+├── 📄 google-apps-script.gs   # Script Google Apps Script
+├── 📄 cors-fix.gs            # Script auxiliar para CORS
+├── 🎨 css/                   # Estilos CSS
+│   ├── style.css             # Estilos principais
+│   ├── diagnostic-styles.css # Estilos para diagnóstico
+│   ├── sidebar-floating.css  # Menu lateral flutuante
+│   └── center-fix.css        # Correções de centralização
+├── ⚡ js/                    # Scripts JavaScript
+│   ├── script.js             # Script principal
+│   ├── google-sheets-integration.js # Integração Google Sheets
+│   ├── debug-sync.js         # Debug de sincronização
+│   └── cors-fix.js          # Correções CORS
+├── 📚 docs/                  # Documentação
+│   ├── README-GoogleSheets.md
+│   ├── DIAGNOSTICO-SYNC.md
+│   ├── accessibility-improvements.md
+│   ├── advanced-features.md
+│   ├── performance-improvements.md
+│   ├── seo-improvements.md
+│   └── IMPROVEMENT-PLAN.md
+└── 🧪 tests/                # Arquivos de teste
+    ├── cors-test.html
+    └── teste-google-script.html
 ```
 
-## 🎨 Design
+## 🛠️ Instalação
 
-- **Paleta de Cores**: Tons de azul escuro e preto para aparência profissional
-- **Gradientes**: `linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)`
-- **Efeito Glassmorphism**: `backdrop-filter: blur()` para transparências elegantes
-- **Animações**: Transições suaves e efeitos de hover 3D
+1. **Clone o repositório**
+   ```bash
+   git clone [url-do-repositorio]
+   cd nova-pasta
+   ```
 
-## 🖥️ Como Usar
+2. **Configure o Google Apps Script**
+   - Acesse [Google Apps Script](https://script.google.com)
+   - Crie um novo projeto
+   - Cole o conteúdo de `google-apps-script.gs`
+   - Publique como Web App
 
-1. **Clone o repositório**:
-```bash
-git clone https://github.com/pastor598/sistema-controle-modems.git
-```
+3. **Configure a URL no sistema**
+   - Abra `index.html`
+   - Vá para a seção "Google Sheets"
+   - Cole a URL do seu Web App
 
-2. **Navegue até o diretório**:
-```bash
-cd sistema-controle-modems
-```
+## 📖 Documentação
 
-3. **Abra o arquivo index.html** no seu navegador ou use um servidor local:
-```bash
-# Com Python
-python -m http.server 8000
+A documentação completa está disponível na pasta `docs/`:
 
-# Com Node.js (live-server)
-npx live-server
-```
+- **[README-GoogleSheets.md](docs/README-GoogleSheets.md)**: Configuração Google Sheets
+- **[DIAGNOSTICO-SYNC.md](docs/DIAGNOSTICO-SYNC.md)**: Sistema de diagnóstico
+- **[accessibility-improvements.md](docs/accessibility-improvements.md)**: Melhorias de acessibilidade
+- **[advanced-features.md](docs/advanced-features.md)**: Funcionalidades avançadas
+- **[performance-improvements.md](docs/performance-improvements.md)**: Otimizações de performance
 
-4. **Acesse**: `http://localhost:8000`
+## 🧪 Testes
 
-## 📋 Funcionalidades Principais
+Os arquivos de teste estão na pasta `tests/`:
 
-### Dashboard
-- Visualização de estatísticas de modems
-- Cards interativos com animações
-- Indicadores de status em tempo real
+- `cors-test.html`: Teste de conectividade CORS
+- `teste-google-script.html`: Teste Google Apps Script
 
-### Calendário
-- Controle de sessões de gravação
-- Visualização mensal/diária
-- Indicadores visuais para dias com registros
+## 🔧 Tecnologias
 
-### Busca e Filtros
-- Pesquisa por modelo de modem
-- Filtros por fabricante
-- Ordenação personalizada
+- **Frontend**: HTML5, CSS3, JavaScript (ES6+)
+- **Backend**: Google Apps Script
+- **Armazenamento**: Google Sheets + LocalStorage
+- **Gráficos**: Chart.js
+- **Ícones**: Font Awesome
 
-### Relatórios
+## 📊 Funcionalidades
+
+### 📝 Gestão de Registros
+- Adicionar, editar e remover registros
+- Filtros avançados por data, modelo, etc.
+- Exportação para PDF e Excel
+
+### 📈 Dashboard
+- Estatísticas em tempo real
 - Gráficos interativos
-- Exportação de dados
-- Análise temporal
+- Calendário de atividades
+- Metas e performance
 
-## 🔧 Configuração
+### 🔄 Sincronização
+- Backup automático Google Sheets
+- Sistema de diagnóstico de conectividade
+- Sincronização em tempo real
+- Modo offline
 
-O projeto não requer configuração especial. Todos os recursos são carregados via CDN:
+### 🎨 Interface
+- Tema escuro/claro
+- Design responsivo
+- Animações suaves
+- Menu lateral flutuante
 
-- ApexCharts: `https://cdn.jsdelivr.net/npm/apexcharts`
-- Font Awesome: `https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css`
-- Google Fonts: `https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Poppins:wght@300;400;500;600;700&display=swap`
+## 🔒 Segurança
+
+- Sistema de login seguro
+- Validação de dados
+- Proteção CSRF
+- Headers de segurança configurados
 
 ## 🌐 Compatibilidade
 
@@ -102,41 +121,24 @@ O projeto não requer configuração especial. Todos os recursos são carregados
 - ✅ Firefox 88+
 - ✅ Safari 14+
 - ✅ Edge 90+
+- ✅ Mobile (iOS/Android)
 
-## 📱 Responsividade
+## 🤝 Contribuição
 
-- **Desktop**: > 1200px
-- **Tablet**: 768px - 1199px  
-- **Mobile**: < 768px
-
-## ♿ Acessibilidade
-
-- Labels ARIA para elementos interativos
-- Navegação por teclado
-- Contraste adequado para leitura
-- Estrutura semântica HTML5
-
-## 🤝 Contribuindo
-
-1. Faça um Fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
+1. Fork o projeto
+2. Crie uma branch (`git checkout -b feature/nova-funcionalidade`)
+3. Commit suas mudanças (`git commit -m 'Adicionar nova funcionalidade'`)
+4. Push para a branch (`git push origin feature/nova-funcionalidade`)
 5. Abra um Pull Request
 
 ## 📄 Licença
 
-Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
+Este projeto está sob a licença MIT. Veja o arquivo LICENSE para mais detalhes.
 
-## 👨‍💻 Autor
+## 🆘 Suporte
 
-**Pastor598**
-- GitHub: [@pastor598](https://github.com/pastor598)
-
-## 🚀 Demo
-
-[Ver Demonstração](https://pastor598.github.io/sistema-controle-modems)
+Para suporte, consulte a documentação na pasta `docs/` ou abra uma issue no repositório.
 
 ---
 
-⭐ **Se este projeto te ajudou, considere dar uma estrela!** ⭐ 
+**Desenvolvido com ❤️ para controle eficiente de modems** 

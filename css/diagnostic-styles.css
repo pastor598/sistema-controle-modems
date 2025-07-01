@@ -1,0 +1,337 @@
+/* ===== ESTILOS PARA SISTEMA DE DIAGNÓSTICO DE SINCRONIZAÇÃO ===== */
+
+/* Container principal do diagnóstico */
+.connection-diagnostic {
+    margin-top: 20px;
+    padding: 0;
+}
+
+/* Cards de resultado - sucesso */
+.diagnostic-success {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    padding: 20px;
+    border-radius: 8px;
+    margin: 15px 0;
+    box-shadow: 0 2px 10px rgba(21, 87, 36, 0.1);
+}
+
+/* Cards de resultado - erro */
+.diagnostic-error {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+    padding: 20px;
+    border-radius: 8px;
+    margin: 15px 0;
+    box-shadow: 0 2px 10px rgba(114, 28, 36, 0.1);
+}
+
+/* Títulos dos cards de diagnóstico */
+.diagnostic-success h4, 
+.diagnostic-error h4 {
+    margin: 0 0 12px 0;
+    font-size: 1.2em;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Parágrafos nos cards */
+.diagnostic-success p, 
+.diagnostic-error p {
+    margin: 8px 0;
+    line-height: 1.5;
+}
+
+/* Listas nos cards */
+.diagnostic-success ul, 
+.diagnostic-error ul {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.diagnostic-success li, 
+.diagnostic-error li {
+    margin: 5px 0;
+    line-height: 1.4;
+}
+
+/* Texto pequeno (timestamp) */
+.diagnostic-success small, 
+.diagnostic-error small {
+    display: block;
+    margin-top: 15px;
+    opacity: 0.8;
+    font-style: italic;
+}
+
+/* Botões nos cards de diagnóstico */
+.diagnostic-success button, 
+.diagnostic-error button {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    margin: 5px 5px 5px 0;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.diagnostic-success button:hover, 
+.diagnostic-error button:hover {
+    background: #2980b9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.diagnostic-success button:active, 
+.diagnostic-error button:active {
+    transform: translateY(0);
+}
+
+/* Botão de ajuda com estilo específico */
+.diagnostic-error button[onclick*="openGoogleScriptHelp"] {
+    background: #6c757d;
+}
+
+.diagnostic-error button[onclick*="openGoogleScriptHelp"]:hover {
+    background: #545b62;
+}
+
+/* Container de ações do diagnóstico */
+.diagnostic-success > div:last-child,
+.diagnostic-error > div:last-child {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Estados de loading para botões */
+.diagnostic-success button:disabled,
+.diagnostic-error button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.diagnostic-success button .fa-spin,
+.diagnostic-error button .fa-spin {
+    animation: fa-spin 2s infinite linear;
+}
+
+/* ===== MELHORIAS PARA STATUS DE SINCRONIZAÇÃO ===== */
+
+.sync-status-container {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.sync-status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 8px 0;
+    padding: 5px 0;
+}
+
+.sync-status-item .label {
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Indicadores de conexão */
+.connection-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+}
+
+.connection-indicator.connected {
+    background: #28a745;
+    box-shadow: 0 0 8px rgba(40, 167, 69, 0.4);
+}
+
+.connection-indicator.disconnected {
+    background: #dc3545;
+    box-shadow: 0 0 8px rgba(220, 53, 69, 0.4);
+}
+
+.connection-indicator.warning {
+    background: #ffc107;
+    box-shadow: 0 0 8px rgba(255, 193, 7, 0.4);
+}
+
+/* Status de texto */
+.status-connected {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.status-disconnected {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.status-warning {
+    color: #ffc107;
+    font-weight: 600;
+}
+
+/* ===== RESPONSIVIDADE PARA DIAGNÓSTICO ===== */
+
+@media (max-width: 768px) {
+    .diagnostic-success,
+    .diagnostic-error {
+        padding: 15px;
+        margin: 10px 0;
+    }
+    
+    .diagnostic-success button,
+    .diagnostic-error button {
+        padding: 8px 12px;
+        font-size: 0.85em;
+        margin: 3px 3px 3px 0;
+    }
+    
+    .sync-status-container {
+        padding: 12px;
+    }
+    
+    .sync-status-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+}
+
+/* ===== TEMA ESCURO PARA DIAGNÓSTICO ===== */
+
+[data-theme="dark"] .diagnostic-success {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.2) 0%, rgba(40, 167, 69, 0.1) 100%);
+    border-color: rgba(40, 167, 69, 0.3);
+    color: #c3e6cb;
+}
+
+[data-theme="dark"] .diagnostic-error {
+    background: linear-gradient(135deg, rgba(220, 53, 69, 0.2) 0%, rgba(220, 53, 69, 0.1) 100%);
+    border-color: rgba(220, 53, 69, 0.3);
+    color: #f8d7da;
+}
+
+[data-theme="dark"] .sync-status-container {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* ===== ESTILOS ESPECÍFICOS DO GOOGLE SHEETS ===== */
+
+.google-sheets-section {
+    position: relative;
+}
+
+.google-sheets-section .card-title {
+    background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.sync-controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 15px 0;
+}
+
+.sync-controls button {
+    flex: 1;
+    min-width: 120px;
+}
+
+.advanced-sync-options {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.backup-controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+.help-section {
+    margin-top: 20px;
+}
+
+.help-section summary {
+    cursor: pointer;
+    color: #3498db;
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+
+.help-content {
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+.help-content ol {
+    padding-left: 20px;
+}
+
+.help-content li {
+    margin: 8px 0;
+    line-height: 1.5;
+}
+
+.help-content code {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: monospace;
+}
+
+.help-content a {
+    color: #3498db;
+    text-decoration: none;
+}
+
+.help-content a:hover {
+    text-decoration: underline;
+}
+
+/* Animações para o diagnóstico */
+@keyframes diagnostic-appear {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.diagnostic-success,
+.diagnostic-error {
+    animation: diagnostic-appear 0.4s ease-out;
+} 

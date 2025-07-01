@@ -379,13 +379,12 @@ class GoogleSheetsIntegration {
         return 'agora';
     }
 
-    // Teste de conexão aprimorado com diagnóstico 403
+    // Teste de conexão integrado com sistema de diagnóstico
     async testConnection() {
-        const urlInput = document.getElementById('googleSheetsUrl');
-        const statusDiv = document.getElementById('connectionStatus');
-        const testBtn = document.getElementById('testConnection');
+        const urlInput = document.getElementById('google-script-url');
+        const testBtn = document.getElementById('test-connection-btn');
         
-        if (!urlInput || !statusDiv || !testBtn) {
+        if (!urlInput || !testBtn) {
             console.error('Elementos de UI não encontrados');
             return;
         }
@@ -394,68 +393,175 @@ class GoogleSheetsIntegration {
         
         if (!url) {
             this.updateStatus('❌ URL não configurada', 'error');
+            // Usar sistema de diagnóstico para mostrar ajuda
+            if (window.showDiagnosticResults) {
+                window.showDiagnosticResults({
+                    status: 'error',
+                    issue: 'URL não configurada',
+                    solutions: [
+                        'Configure a URL do Google Apps Script nas configurações',
+                        'Acesse https://script.google.com para criar o script',
+                        'Siga o guia de configuração na seção de ajuda'
+                    ]
+                });
+            }
             return;
         }
         
-        // Validação básica da URL
-        if (!this.isValidGoogleScriptUrl(url)) {
-            this.updateStatus('❌ URL inválida do Google Apps Script', 'error');
-            return;
+        // Salvar URL se válida
+        if (this.isValidGoogleScriptUrl(url)) {
+            this.setScriptUrl(url);
         }
         
         testBtn.disabled = true;
-        testBtn.textContent = 'Testando...';
-        
-        const startTime = Date.now();
+        testBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testando...';
         
         try {
-            // Log detalhado para diagnóstico
-            console.log('🔍 DIAGNÓSTICO AVANÇADO - Testando URL:', url);
-            console.log('🔍 Timestamp:', new Date().toISOString());
-            
-            // Teste 1: Verificar se URL está acessível (sem CORS)
-            console.log('🔍 Teste 1: Verificando acessibilidade básica...');
-            const isAccessible = await this.testUrlAccessibility(url);
-            console.log('🔍 URL acessível:', isAccessible);
-            
-            // Teste 2: Tentar POST com modo no-cors
-            console.log('🔍 Teste 2: Tentando POST com no-cors...');
-            const noCorsResult = await this.testNoCorsRequest(url);
-            console.log('🔍 Resultado no-cors:', noCorsResult);
-            
-            // Teste 3: Tentar POST com CORS normal
-            console.log('🔍 Teste 3: Tentando POST com CORS...');
-            const corsResult = await this.testCorsRequest(url);
-            console.log('🔍 Resultado CORS:', corsResult);
-            
-            // Teste 4: Tentar GET simples
-            console.log('🔍 Teste 4: Tentando GET simples...');
-            const getResult = await this.testGetRequest(url);
-            console.log('🔍 Resultado GET:', getResult);
-            
-            const endTime = Date.now();
-            const responseTime = endTime - startTime;
-            
-            // Análise dos resultados
-            const diagnosis = this.analyzeDiagnosticResults({
-                isAccessible,
-                noCorsResult,
-                corsResult,
-                getResult,
-                responseTime
-            });
-            
-            console.log('🔍 DIAGNÓSTICO FINAL:', diagnosis);
-            
-            // Mostrar resultado para o usuário
-            this.displayDiagnosticResults(diagnosis, responseTime);
+            // Usar o sistema de diagnóstico integrado
+            if (window.diagnoseSync) {
+                console.log('🔧 Usando sistema de diagnóstico integrado...');
+                const result = await window.diagnoseSync();
+                
+                if (result.status === 'success') {
+                    this.updateStatus('✅ Conectado', 'success');
+                    this.isConnected = true;
+                    this.updateSyncStatus();
+                    
+                    // Salvar último teste bem-sucedido
+                    localStorage.setItem('lastSuccessfulTest', new Date().toISOString());
+                    localStorage.removeItem('lastSyncError');
+                    
+                    // Mostrar resultado positivo
+                    if (window.showDiagnosticResults) {
+                        window.showDiagnosticResults(result);
+                    }
+                    
+                    this.showActionFeedback('Conexão estabelecida com sucesso!', false);
+                    
+                } else {
+                    this.updateStatus('❌ ' + result.issue, 'error');
+                    this.isConnected = false;
+                    
+                    // Salvar erro para diagnóstico futuro
+                    localStorage.setItem('lastSyncError', JSON.stringify({
+                        error: result.issue,
+                        timestamp: new Date().toISOString(),
+                        url: url
+                    }));
+                    
+                    // Mostrar resultado com diagnóstico
+                    if (window.showDiagnosticResults) {
+                        window.showDiagnosticResults(result);
+                    }
+                    
+                    this.showActionFeedback('Erro na conexão: ' + result.issue, true);
+                }
+                
+                return result;
+                
+            } else {
+                // Fallback para teste básico se diagnóstico não estiver disponível
+                console.log('⚠️ Sistema de diagnóstico não disponível, executando teste básico...');
+                return await this.basicConnectionTest(url);
+            }
             
         } catch (error) {
-            console.error('🔍 Erro durante diagnóstico:', error);
-            this.updateStatus(`❌ Erro no diagnóstico: ${error.message}`, 'error');
+            console.error('❌ Erro durante teste de conexão:', error);
+            this.updateStatus('❌ Erro: ' + error.message, 'error');
+            this.isConnected = false;
+            
+            // Salvar erro
+            localStorage.setItem('lastSyncError', JSON.stringify({
+                error: error.message,
+                timestamp: new Date().toISOString(),
+                url: url
+            }));
+            
+            this.showActionFeedback('Erro no teste: ' + error.message, true);
+            
+            // Mostrar erro no diagnóstico
+            if (window.showDiagnosticResults) {
+                window.showDiagnosticResults({
+                    status: 'error',
+                    issue: error.message,
+                    solutions: [
+                        'Verifique sua conexão com a internet',
+                        'Certifique-se que a URL está correta',
+                        'Verifique se o Google Apps Script está implantado',
+                        'Execute a função setup() no Google Apps Script'
+                    ]
+                });
+            }
+            
+            throw error;
+            
         } finally {
             testBtn.disabled = false;
-            testBtn.textContent = 'Testar Conexão';
+            testBtn.innerHTML = '<i class="fas fa-wifi"></i> Testar Conexão';
+        }
+    }
+    
+    // Teste básico de conexão como fallback
+    async basicConnectionTest(url) {
+        try {
+            console.log('🔄 Executando teste básico de conexão...');
+            
+            const response = await fetch(url + '?test=ping&timestamp=' + Date.now(), {
+                method: 'GET',
+                mode: 'cors',
+                headers: {
+                    'Accept': 'application/json, text/plain, */*'
+                }
+            });
+            
+            console.log('📡 Resposta do servidor:', response.status, response.statusText);
+            
+            if (response.ok) {
+                this.updateStatus('✅ Conectado', 'success');
+                this.isConnected = true;
+                
+                const responseText = await response.text();
+                console.log('📄 Conteúdo da resposta:', responseText.substring(0, 200) + '...');
+                
+                return { 
+                    status: 'success', 
+                    message: 'Conexão estabelecida com sucesso',
+                    response: responseText
+                };
+            } else {
+                const errorMsg = `Erro ${response.status}: ${response.statusText}`;
+                this.updateStatus('❌ ' + errorMsg, 'error');
+                this.isConnected = false;
+                return { status: 'error', issue: errorMsg };
+            }
+            
+        } catch (error) {
+            console.error('❌ Erro no teste básico:', error);
+            this.updateStatus('❌ Erro: ' + error.message, 'error');
+            this.isConnected = false;
+            
+            // Analisar tipo de erro
+            let issue = error.message;
+            let solutions = [];
+            
+            if (error.message.includes('Failed to fetch')) {
+                issue = 'Failed to fetch - Problema de conectividade';
+                solutions = [
+                    'Verifique sua conexão com a internet',
+                    'Certifique-se que o Google Apps Script está implantado',
+                    'Verifique se a URL está correta',
+                    'Execute a função setup() no Google Apps Script'
+                ];
+            } else if (error.message.includes('CORS')) {
+                issue = 'Erro de CORS - Problema de permissões';
+                solutions = [
+                    'Reimplante o Google Apps Script com permissões "Anyone with the link"',
+                    'Verifique se todas as permissões foram concedidas',
+                    'Execute a função setup() novamente'
+                ];
+            }
+            
+            return { status: 'error', issue: issue, solutions: solutions };
         }
     }
     

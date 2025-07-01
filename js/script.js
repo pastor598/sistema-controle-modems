@@ -152,6 +152,11 @@ let currentUser = null;
 
 // Verificar se há usuário logado ao carregar a página
 function checkLoginStatus() {
+    // FORÇAR SEMPRE MOSTRAR A APLICAÇÃO PRINCIPAL (SEM LOGIN)
+    showMainApp();
+    return true;
+    
+    /* CÓDIGO ORIGINAL DESABILITADO
     const savedUser = localStorage.getItem('currentUser');
     const rememberMe = localStorage.getItem('rememberMe') === 'true';
     
@@ -165,6 +170,7 @@ function checkLoginStatus() {
     // Se não há usuário salvo ou não marcou "lembrar", mostrar login
     showLoginScreen();
     return false;
+    */
 }
 
 // Mostrar tela de login
@@ -198,15 +204,20 @@ function showMainApp() {
     const loginScreen = document.getElementById('login-screen');
     const mainApp = document.getElementById('main-app');
     
+    // Esconder tela de login
     if (loginScreen) {
         loginScreen.classList.add('hidden');
         loginScreen.style.display = 'none';
     }
+    
+    // Mostrar aplicação principal
     if (mainApp) {
         mainApp.classList.remove('hidden');
         mainApp.style.display = 'block';
         document.body.style.overflow = 'auto';
     }
+    
+    console.log('Aplicação principal exibida com sucesso!');
 }
 
 // Atualizar exibição do usuário no header
@@ -393,19 +404,16 @@ function initializeLoginSystem() {
 
 // Aguardar DOM carregar para inicializar
 document.addEventListener('DOMContentLoaded', function() {
-    // Inicializar sistema de login primeiro
-    initializeLoginSystem();
+    console.log('Iniciando ModemControl Pro...');
     
-    // Verificar status de login
-    const isLoggedIn = checkLoginStatus();
+    // SEMPRE MOSTRAR A APLICAÇÃO PRINCIPAL (SEM LOGIN)
+    showMainApp();
     
-    // Se já estiver logado, inicializar a aplicação
-    if (isLoggedIn) {
-        initializeNavigation();
-        initializeUserMenu();
-        initializeBasicFunctionality();
-        initApp();
-    }
+    // Inicializar todas as funcionalidades
+    initializeNavigation();
+    initializeUserMenu();
+    initializeBasicFunctionality();
+    initApp();
     
     console.log('ModemControl Pro inicializado com sucesso!');
 });

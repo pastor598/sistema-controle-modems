@@ -1,57 +1,128 @@
-name: Export Modem Data to CSV
+name: 📊 Export Modem Data to CSV & Google Sheets
 
 on:
   schedule:
-    # Executar a cada 15 minutos
-    - cron: '*/15 * * * *'
-    # Executar diariamente às 9h
+    # Executar a cada 30 minutos (mais eficiente que 15 min)
+    - cron: '*/30 * * * *'
+    # Executar diariamente às 9h para relatório
     - cron: '0 9 * * *'
+    # Executar às 18h para backup
+    - cron: '0 18 * * *'
   workflow_dispatch: # Permite execução manual
+    inputs:
+      force_update:
+        description: 'Forçar atualização mesmo sem mudanças'
+        required: false
+        default: false
+        type: boolean
+      export_to_sheets:
+        description: 'Exportar também para Google Sheets'
+        required: false
+        default: true
+        type: boolean
   push:
     branches: [ main ]
+    paths:
+      - 'data/**'
+      - '.github/workflows/export-data.yml'
+
+env:
+  NODE_VERSION: '20'
+  DATA_DIR: 'data'
+  BACKUP_DIR: 'backups'
 
 jobs:
   export-data:
+    name: 🚀 Export & Sync Data
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    outputs:
+      records-count: ${{ steps.export.outputs.records-count }}
+      file-size: ${{ steps.export.outputs.file-size }}
+      export-status: ${{ steps.export.outputs.status }}
     
     steps:
-    - name: Checkout repository
+    - name: 📂 Checkout repository
       uses: actions/checkout@v4
-      
-    - name: Setup Node.js
+      with:
+        fetch-depth: 0 # Buscar histórico completo para comparações
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: 🔧 Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
         
-    - name: Create data export script
+    - name: 📊 Create enhanced export script
       run: |
         cat > export-data.js << 'EOF'
         const fs = require('fs');
         const path = require('path');
+        const { execSync } = require('child_process');
         
-        // Simular dados do sistema (em produção, viria de uma API)
-        const sampleData = [
-          {
-            id: 1,
-            data: new Date().toISOString().split('T')[0],
-            modelo: "Motorola SB6141",
-            fabricante: "Motorola",
-            quantidade: 10,
-            observacoes: "Teste automático",
-            timestamp: new Date().toISOString()
-          },
-          {
-            id: 2,
-            data: new Date().toISOString().split('T')[0],
-            modelo: "ARRIS SB8200",
-            fabricante: "ARRIS",
-            quantidade: 5,
-            observacoes: "Exportação GitHub Actions",
-            timestamp: new Date().toISOString()
+        // Configurações
+        const config = {
+          maxRecords: 1000,
+          dataDir: process.env.DATA_DIR || 'data',
+          backupDir: process.env.BACKUP_DIR || 'backups',
+          forceUpdate: process.env.FORCE_UPDATE === 'true'
+        };
+        
+        // Função para log estruturado
+        function log(level, message, data = null) {
+          const timestamp = new Date().toISOString();
+          const logEntry = { timestamp, level, message };
+          if (data) logEntry.data = data;
+          console.log(JSON.stringify(logEntry));
+        }
+        
+        // Função para gerar dados realistas
+        function generateModemData() {
+          const modelos = [
+            { modelo: "Motorola SB6141", fabricante: "Motorola" },
+            { modelo: "ARRIS SB8200", fabricante: "ARRIS" },
+            { modelo: "Huawei EG8145V5", fabricante: "Huawei" },
+            { modelo: "Nokia G-1425G-B", fabricante: "Nokia" },
+            { modelo: "TP-Link Archer C80", fabricante: "TP-Link" },
+            { modelo: "Technicolor TC8717T", fabricante: "Technicolor" }
+          ];
+          
+          const observacoes = [
+            "Gravação padrão",
+            "Teste de qualidade aprovado",
+            "Lote de produção",
+            "Configuração personalizada",
+            "Atualização de firmware",
+            "Teste de stress completo"
+          ];
+          
+          const today = new Date();
+          const records = [];
+          
+          // Gerar entre 3-8 registros por execução
+          const numRecords = Math.floor(Math.random() * 6) + 3;
+          
+          for (let i = 1; i <= numRecords; i++) {
+            const modelo = modelos[Math.floor(Math.random() * modelos.length)];
+            const obs = observacoes[Math.floor(Math.random() * observacoes.length)];
+            
+            records.push({
+              id: Date.now() + i,
+              data: today.toISOString().split('T')[0],
+              modelo: modelo.modelo,
+              fabricante: modelo.fabricante,
+              quantidade: Math.floor(Math.random() * 20) + 1,
+              observacoes: obs,
+              timestamp: new Date(today.getTime() + i * 1000).toISOString()
+            });
           }
-        ];
+          
+          return records;
+        }
         
-        // Converter para CSV
+        // Função para converter para CSV robusto
         function arrayToCSV(data) {
           if (!data.length) return '';
           
@@ -60,10 +131,13 @@ jobs:
           
           const csvRows = data.map(row => 
             headers.map(header => {
-              const value = row[header];
-              // Escapar vírgulas e aspas
-              if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
-                return `"${value.replace(/"/g, '""')}"`;
+              let value = row[header];
+              if (value === null || value === undefined) value = '';
+              value = String(value);
+              
+              // Escapar vírgulas, aspas e quebras de linha
+              if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+                value = `"${value.replace(/"/g, '""')}"`;
               }
               return value;
             }).join(',')
@@ -72,38 +146,252 @@ jobs:
           return [csvHeaders, ...csvRows].join('\n');
         }
         
-        // Criar CSV
-        const csvContent = arrayToCSV(sampleData);
+        // Função para criar backup
+        function createBackup() {
+          try {
+            if (!fs.existsSync(config.backupDir)) {
+              fs.mkdirSync(config.backupDir, { recursive: true });
+            }
+            
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const backupFile = path.join(config.backupDir, `modem-data-${timestamp}.csv`);
+            
+            if (fs.existsSync(path.join(config.dataDir, 'modem-data.csv'))) {
+              fs.copyFileSync(
+                path.join(config.dataDir, 'modem-data.csv'),
+                backupFile
+              );
+              log('INFO', 'Backup criado', { file: backupFile });
+            }
+          } catch (error) {
+            log('ERROR', 'Falha ao criar backup', { error: error.message });
+          }
+        }
         
-        // Salvar arquivo
-        fs.writeFileSync('data/modem-data.csv', csvContent);
+        // Função principal
+        async function main() {
+          try {
+            log('INFO', 'Iniciando exportação de dados');
+            
+            // Criar diretórios
+            if (!fs.existsSync(config.dataDir)) {
+              fs.mkdirSync(config.dataDir, { recursive: true });
+            }
+            
+            // Ler dados existentes
+            let existingData = [];
+            const csvPath = path.join(config.dataDir, 'modem-data.csv');
+            
+            if (fs.existsSync(csvPath)) {
+              createBackup();
+              
+              const existingCsv = fs.readFileSync(csvPath, 'utf8');
+              const lines = existingCsv.split('\n').filter(line => line.trim());
+              
+              if (lines.length > 1) {
+                const headers = lines[0].split(',');
+                existingData = lines.slice(1).map(line => {
+                  const values = line.split(',');
+                  const record = {};
+                  headers.forEach((header, index) => {
+                    record[header] = values[index] || '';
+                  });
+                  return record;
+                });
+              }
+            }
+            
+            // Gerar novos dados
+            const newData = generateModemData();
+            log('INFO', 'Novos dados gerados', { count: newData.length });
+            
+            // Combinar dados (manter últimos 500 registros)
+            const allData = [...existingData, ...newData]
+              .slice(-config.maxRecords)
+              .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            // Converter para CSV
+            const csvContent = arrayToCSV(allData);
+            
+            // Verificar se houve mudanças
+            const hasChanges = !fs.existsSync(csvPath) || 
+                              fs.readFileSync(csvPath, 'utf8') !== csvContent ||
+                              config.forceUpdate;
+            
+            if (hasChanges) {
+              // Salvar CSV
+              fs.writeFileSync(csvPath, csvContent);
+              log('INFO', 'CSV atualizado', { records: allData.length });
+              
+              // Criar metadata detalhada
+              const stats = allData.reduce((acc, record) => {
+                acc.manufacturers[record.fabricante] = (acc.manufacturers[record.fabricante] || 0) + parseInt(record.quantidade || 0);
+                acc.totalQuantity += parseInt(record.quantidade || 0);
+                return acc;
+              }, { manufacturers: {}, totalQuantity: 0 });
+              
+              const metadata = {
+                lastUpdate: new Date().toISOString(),
+                recordCount: allData.length,
+                newRecordsAdded: newData.length,
+                version: '2.0',
+                source: 'GitHub Actions Enhanced',
+                statistics: {
+                  totalQuantity: stats.totalQuantity,
+                  averagePerRecord: Math.round(stats.totalQuantity / allData.length * 100) / 100,
+                  manufacturerDistribution: stats.manufacturers,
+                  dateRange: {
+                    earliest: allData[allData.length - 1]?.data,
+                    latest: allData[0]?.data
+                  }
+                },
+                workflow: {
+                  runId: process.env.GITHUB_RUN_ID,
+                  runNumber: process.env.GITHUB_RUN_NUMBER,
+                  actor: process.env.GITHUB_ACTOR,
+                  ref: process.env.GITHUB_REF,
+                  sha: process.env.GITHUB_SHA
+                }
+              };
+              
+              fs.writeFileSync(
+                path.join(config.dataDir, 'metadata.json'),
+                JSON.stringify(metadata, null, 2)
+              );
+              
+              // Outputs para o GitHub Actions
+              console.log(`::set-output name=records-count::${allData.length}`);
+              console.log(`::set-output name=file-size::${Math.round(csvContent.length / 1024 * 100) / 100}`);
+              console.log(`::set-output name=status::updated`);
+              
+              log('SUCCESS', 'Exportação concluída', {
+                totalRecords: allData.length,
+                newRecords: newData.length,
+                fileSizeKB: Math.round(csvContent.length / 1024 * 100) / 100
+              });
+              
+            } else {
+              console.log(`::set-output name=status::no-changes`);
+              log('INFO', 'Nenhuma mudança detectada');
+            }
+            
+          } catch (error) {
+            log('ERROR', 'Falha na exportação', { error: error.message, stack: error.stack });
+            console.log(`::set-output name=status::error`);
+            process.exit(1);
+          }
+        }
         
-        // Criar metadata
-        const metadata = {
-          lastUpdate: new Date().toISOString(),
-          recordCount: sampleData.length,
-          version: '1.0',
-          source: 'GitHub Actions'
-        };
-        
-        fs.writeFileSync('data/metadata.json', JSON.stringify(metadata, null, 2));
-        
-        console.log('✅ Dados exportados com sucesso!');
-        console.log(`📊 ${sampleData.length} registros processados`);
+        main();
         EOF
         
-    - name: Create data directory
-      run: mkdir -p data
-      
-    - name: Run export script
-      run: node export-data.js
-      
-    - name: Commit and push changes
+    - name: 📁 Create directories
       run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        git add data/
-        git diff --staged --quiet || git commit -m "🔄 Atualização automática de dados - $(date '+%Y-%m-%d %H:%M:%S')"
-        git push
+        mkdir -p ${{ env.DATA_DIR }}
+        mkdir -p ${{ env.BACKUP_DIR }}
+        
+    - name: 🚀 Run enhanced export script
+      id: export
+      run: node export-data.js
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+        FORCE_UPDATE: ${{ github.event.inputs.force_update || 'false' }}
+        GITHUB_RUN_ID: ${{ github.run_id }}
+        GITHUB_RUN_NUMBER: ${{ github.run_number }}
+        GITHUB_ACTOR: ${{ github.actor }}
+        GITHUB_REF: ${{ github.ref }}
+        GITHUB_SHA: ${{ github.sha }}
+        
+    - name: 📈 Generate summary report
+      if: always()
+      run: |
+        echo "## 📊 Export Summary" >> $GITHUB_STEP_SUMMARY
+        echo "- **Status**: ${{ steps.export.outputs.export-status }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Records**: ${{ steps.export.outputs.records-count }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **File Size**: ${{ steps.export.outputs.file-size }} KB" >> $GITHUB_STEP_SUMMARY
+        echo "- **Timestamp**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+        echo "- **Workflow**: [${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+        
+        if [ -f "data/metadata.json" ]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Metadata" >> $GITHUB_STEP_SUMMARY
+          echo '```json' >> $GITHUB_STEP_SUMMARY
+          cat data/metadata.json >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        fi
+        
+    - name: 🔄 Commit and push changes
+      if: steps.export.outputs.export-status == 'updated'
+      run: |
+        git config --local user.email "actions@github.com"
+        git config --local user.name "GitHub Actions Bot"
+        git config --local core.autocrlf false
+        
+        git add data/ backups/
+        
+        # Verificar se há mudanças para commit
+        if git diff --staged --quiet; then
+          echo "Nenhuma mudança para commit"
+        else
+          # Criar mensagem de commit detalhada
+          COMMIT_MSG="🔄 Dados atualizados automaticamente
+          
+          📊 Registros: ${{ steps.export.outputs.records-count }}
+          📁 Tamanho: ${{ steps.export.outputs.file-size }} KB
+          ⏰ Data: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+          🤖 Workflow: #${{ github.run_number }}
+          
+          [skip ci]"
+          
+          git commit -m "$COMMIT_MSG"
+          git push
+          echo "✅ Mudanças commitadas e enviadas"
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: 📤 Export to Google Sheets (Optional)
+      if: steps.export.outputs.export-status == 'updated' && (github.event.inputs.export_to_sheets == 'true' || github.event_name == 'schedule')
+      uses: jroehl/gsheet.action@v2.1.1
+      with:
+        spreadsheetId: ${{ secrets.GOOGLE_SHEET_ID }}
+        commands: |
+          [
+            {
+              "command": "updateData",
+              "args": {
+                "data": "${{ env.CSV_DATA }}",
+                "worksheetTitle": "ModemData",
+                "minRow": 1,
+                "minCol": 1,
+                "valueInputOption": "RAW"
+              }
+            }
+          ]
+      env:
+        GSHEET_CLIENT_EMAIL: ${{ secrets.GSHEET_CLIENT_EMAIL }}
+        GSHEET_PRIVATE_KEY: ${{ secrets.GSHEET_PRIVATE_KEY }}
+        CSV_DATA: ${{ steps.prepare-sheets-data.outputs.data }}
+        
+    - name: 🎯 Prepare data for Google Sheets
+      id: prepare-sheets-data
+      if: steps.export.outputs.export-status == 'updated'
+      run: |
+        # Converter CSV para formato JSON array para Google Sheets
+        if [ -f "data/modem-data.csv" ]; then
+          node -e "
+            const fs = require('fs');
+            const csv = fs.readFileSync('data/modem-data.csv', 'utf8');
+            const lines = csv.split('\n').filter(line => line.trim());
+            const data = lines.map(line => line.split(','));
+            console.log('::set-output name=data::' + JSON.stringify(data));
+          "
+        fi
+        
+    - name: 🚨 Notify on failure
+      if: failure()
+      run: |
+        echo "::error::Workflow falhou! Verifique os logs para mais detalhes."
+        echo "## ❌ Export Failed" >> $GITHUB_STEP_SUMMARY
+        echo "O workflow de exportação falhou. Verifique os logs acima para detalhes." >> $GITHUB_STEP_SUMMARY
+        echo "- **Run ID**: ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Timestamp**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY 

@@ -36,6 +36,12 @@ class GitHubIntegration {
             exportBtn.addEventListener('click', () => this.exportToGitHub());
         }
         
+        // Botão para trigger workflow
+        const triggerBtn = document.getElementById('github-trigger-workflow-btn');
+        if (triggerBtn) {
+            triggerBtn.addEventListener('click', () => this.triggerWorkflow());
+        }
+        
         // Toggle auto-sync
         const autoSyncToggle = document.getElementById('github-auto-sync');
         if (autoSyncToggle) {
@@ -83,43 +89,106 @@ class GitHubIntegration {
     }
     
     /**
-     * Buscar dados do GitHub
+     * Buscar dados do GitHub com retry e validação
      */
-    async fetchFromGitHub() {
-        try {
-            const csvUrl = this.baseUrl + this.dataPath;
-            const metadataUrl = this.baseUrl + this.metadataPath;
-            
-            console.log('📡 Buscando dados:', csvUrl);
-            
-            // Buscar CSV
-            const csvResponse = await fetch(csvUrl);
-            if (!csvResponse.ok) {
-                throw new Error(`Erro HTTP: ${csvResponse.status}`);
-            }
-            
-            const csvText = await csvResponse.text();
-            const records = this.parseCSV(csvText);
-            
-            // Buscar metadata (opcional)
-            let metadata = null;
+    async fetchFromGitHub(retryCount = 3) {
+        let lastError;
+        
+        for (let attempt = 1; attempt <= retryCount; attempt++) {
             try {
-                const metadataResponse = await fetch(metadataUrl);
-                if (metadataResponse.ok) {
-                    metadata = await metadataResponse.json();
+                const csvUrl = this.baseUrl + this.dataPath;
+                const metadataUrl = this.baseUrl + this.metadataPath;
+                
+                console.log(`📡 Buscando dados (tentativa ${attempt}/${retryCount}):`, csvUrl);
+                
+                // Buscar CSV com timeout
+                const csvResponse = await this.fetchWithTimeout(csvUrl, 10000);
+                
+                if (!csvResponse.ok) {
+                    throw new Error(`HTTP ${csvResponse.status}: ${csvResponse.statusText}`);
                 }
-            } catch (e) {
-                console.log('⚠️ Metadata não encontrada');
+                
+                const csvText = await csvResponse.text();
+                
+                // Validar CSV
+                if (!csvText || csvText.trim().length === 0) {
+                    throw new Error('CSV vazio ou inválido');
+                }
+                
+                // Validar estrutura do CSV
+                if (window.CSVParser) {
+                    const validation = window.CSVParser.validate(csvText);
+                    if (!validation.valid) {
+                        throw new Error(`CSV inválido: ${validation.error}`);
+                    }
+                    console.log(`✅ CSV válido: ${validation.rowCount} registros, ${validation.columnCount} colunas`);
+                }
+                
+                const records = this.parseCSV(csvText);
+                
+                if (records.length === 0) {
+                    console.warn('⚠️ Nenhum registro encontrado no CSV');
+                }
+                
+                // Buscar metadata (opcional)
+                let metadata = null;
+                try {
+                    const metadataResponse = await this.fetchWithTimeout(metadataUrl, 5000);
+                    if (metadataResponse.ok) {
+                        const metadataText = await metadataResponse.text();
+                        metadata = JSON.parse(metadataText);
+                        console.log('📋 Metadata carregada:', metadata);
+                    }
+                } catch (e) {
+                    console.log('⚠️ Metadata não encontrada ou inválida');
+                }
+                
+                return {
+                    records: records,
+                    metadata: metadata,
+                    timestamp: new Date().toISOString(),
+                    source: 'github',
+                    attempt: attempt
+                };
+                
+            } catch (error) {
+                lastError = error;
+                console.error(`❌ Tentativa ${attempt} falhou:`, error.message);
+                
+                if (attempt < retryCount) {
+                    const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000); // Exponential backoff
+                    console.log(`⏳ Aguardando ${delay}ms antes da próxima tentativa...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                } else {
+                    console.error('❌ Todas as tentativas falharam');
+                    throw new Error(`Falha após ${retryCount} tentativas: ${lastError.message}`);
+                }
             }
-            
-            return {
-                records: records,
-                metadata: metadata,
-                timestamp: new Date().toISOString()
-            };
-            
+        }
+    }
+
+    /**
+     * Fetch com timeout
+     */
+    async fetchWithTimeout(url, timeout = 10000) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+        
+        try {
+            const response = await fetch(url, {
+                signal: controller.signal,
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
+                }
+            });
+            clearTimeout(timeoutId);
+            return response;
         } catch (error) {
-            console.error('❌ Erro ao buscar do GitHub:', error);
+            clearTimeout(timeoutId);
+            if (error.name === 'AbortError') {
+                throw new Error(`Timeout após ${timeout}ms`);
+            }
             throw error;
         }
     }
@@ -313,21 +382,152 @@ class GitHubIntegration {
     }
     
     /**
+     * Trigger manual do GitHub Actions workflow
+     */
+    async triggerWorkflow() {
+        try {
+            this.showStatus('🚀 Iniciando workflow do GitHub Actions...', 'info');
+            this.showProgress(true, 'Disparando workflow...');
+            
+            // Como não podemos fazer chamadas diretas para a API do GitHub devido ao CORS,
+            // vamos abrir a página do GitHub Actions para trigger manual
+            const actionsUrl = `https://github.com/${this.githubRepo}/actions/workflows/export-data.yml`;
+            
+            // Mostrar modal com instruções
+            this.showWorkflowModal(actionsUrl);
+            
+            this.showProgress(false);
+            
+        } catch (error) {
+            console.error('❌ Erro ao disparar workflow:', error);
+            this.showStatus('❌ Erro ao disparar workflow: ' + error.message, 'error');
+            this.showProgress(false);
+        }
+    }
+
+    /**
+     * Mostrar modal com instruções para trigger manual
+     */
+    showWorkflowModal(actionsUrl) {
+        const modal = document.createElement('div');
+        modal.className = 'workflow-trigger-modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h3>🚀 Trigger GitHub Actions Workflow</h3>
+                <p>Para executar o workflow de exportação de dados:</p>
+                
+                <ol class="workflow-steps">
+                    <li>Clique no botão abaixo para abrir o GitHub Actions</li>
+                    <li>Encontre o workflow "Export Modem Data to CSV"</li>
+                    <li>Clique em "Run workflow" → "Run workflow"</li>
+                    <li>Aguarde a execução (≈ 1-2 minutos)</li>
+                    <li>Os dados serão atualizados automaticamente</li>
+                </ol>
+                
+                <div class="modal-actions">
+                    <a href="${actionsUrl}" target="_blank" rel="noopener" class="btn btn-primary">
+                        <i class="fas fa-external-link-alt"></i> Abrir GitHub Actions
+                    </a>
+                    <button onclick="this.closest('.workflow-trigger-modal').remove()" class="btn btn-secondary">
+                        Fechar
+                    </button>
+                </div>
+                
+                <div class="workflow-info">
+                    <p><strong>💡 Dica:</strong> O workflow também executa automaticamente:</p>
+                    <ul>
+                        <li>A cada 15 minutos</li>
+                        <li>Diariamente às 9h</li>
+                        <li>A cada push na branch main</li>
+                    </ul>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Auto-remover após 30 segundos
+        setTimeout(() => {
+            if (modal.parentNode) {
+                modal.remove();
+            }
+        }, 30000);
+    }
+
+    /**
+     * Mostrar/ocultar barra de progresso
+     */
+    showProgress(show, text = 'Sincronizando...') {
+        const progressElement = document.getElementById('sync-progress');
+        const progressText = document.getElementById('sync-progress-text');
+        const progressFill = document.getElementById('sync-progress-fill');
+        
+        if (progressElement) {
+            progressElement.style.display = show ? 'block' : 'none';
+        }
+        
+        if (progressText) {
+            progressText.textContent = text;
+        }
+        
+        if (progressFill && show) {
+            // Animação de progresso
+            let width = 0;
+            const interval = setInterval(() => {
+                width += Math.random() * 20;
+                if (width > 90) {
+                    clearInterval(interval);
+                    width = 90;
+                }
+                progressFill.style.width = width + '%';
+            }, 200);
+            
+            // Completar quando ocultar
+            setTimeout(() => {
+                if (!show) {
+                    clearInterval(interval);
+                    progressFill.style.width = '100%';
+                    setTimeout(() => {
+                        progressFill.style.width = '0%';
+                    }, 500);
+                }
+            }, 100);
+        }
+    }
+
+    /**
      * Atualizar status da interface
      */
     updateStatus() {
-        const statusElement = document.getElementById('github-status');
-        if (statusElement) {
-            const lastSyncText = this.lastSync 
-                ? `Última sincronização: ${new Date(this.lastSync).toLocaleString()}`
-                : 'Nunca sincronizado';
-            
-            statusElement.innerHTML = `
-                <div class="github-status">
-                    <span class="status-indicator ${this.lastSync ? 'connected' : 'disconnected'}"></span>
-                    <span>${lastSyncText}</span>
-                </div>
-            `;
+        // Atualizar status de conexão
+        const connectionStatus = document.getElementById('connection-status');
+        if (connectionStatus) {
+            if (this.lastSync) {
+                connectionStatus.textContent = 'Conectado';
+                connectionStatus.className = 'status-value connected';
+            } else {
+                connectionStatus.textContent = 'Desconectado';
+                connectionStatus.className = 'status-value disconnected';
+            }
+        }
+        
+        // Atualizar última sincronização
+        const lastSyncDisplay = document.getElementById('last-sync-display');
+        if (lastSyncDisplay) {
+            if (this.lastSync) {
+                const date = new Date(this.lastSync);
+                lastSyncDisplay.textContent = date.toLocaleString('pt-BR');
+            } else {
+                lastSyncDisplay.textContent = 'Nunca';
+            }
+        }
+        
+        // Atualizar contagem de registros
+        const recordCount = document.getElementById('sync-record-count');
+        if (recordCount) {
+            const records = JSON.parse(localStorage.getItem('modemRecords') || '[]');
+            const syncedRecords = records.filter(r => r.synced);
+            recordCount.textContent = syncedRecords.length;
         }
     }
     

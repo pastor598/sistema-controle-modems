@@ -125,27 +125,38 @@ class GitHubIntegration {
     }
     
     /**
-     * Converter CSV para array de objetos
+     * Converter CSV para array de objetos usando parser robusto
      */
     parseCSV(csvText) {
-        const lines = csvText.trim().split('\n');
-        if (lines.length < 2) return [];
-        
-        const headers = lines[0].split(',');
-        const records = [];
-        
-        for (let i = 1; i < lines.length; i++) {
-            const values = lines[i].split(',');
-            const record = {};
+        try {
+            // Usar o parser CSV robusto se disponível
+            if (window.CSVParser) {
+                return window.CSVParser.parse(csvText);
+            }
             
-            headers.forEach((header, index) => {
-                record[header.trim()] = values[index] ? values[index].trim() : '';
-            });
+            // Fallback para parser simples
+            const lines = csvText.trim().split('\n');
+            if (lines.length < 2) return [];
             
-            records.push(record);
+            const headers = lines[0].split(',');
+            const records = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(',');
+                const record = {};
+                
+                headers.forEach((header, index) => {
+                    record[header.trim()] = values[index] ? values[index].trim() : '';
+                });
+                
+                records.push(record);
+            }
+            
+            return records;
+        } catch (error) {
+            console.error('❌ Erro ao fazer parse do CSV:', error);
+            return [];
         }
-        
-        return records;
     }
     
     /**
@@ -222,38 +233,46 @@ class GitHubIntegration {
     }
     
     /**
-     * Converter dados para CSV
+     * Converter dados para CSV usando parser robusto
      */
     convertToCSV(records) {
         if (records.length === 0) return '';
         
-        // Headers
-        const headers = ['id', 'data', 'modelo', 'fabricante', 'quantidade', 'observacoes', 'timestamp'];
-        
-        // Converter registros
-        const rows = records.map(record => [
-            record.id || '',
-            record.date || '',
-            (record.model && record.model.modelo) || '',
-            (record.model && record.model.fabricante) || '',
-            record.quantity || 0,
-            record.notes || '',
-            record.timestamp || ''
-        ]);
-        
-        // Combinar headers e rows
-        const allRows = [headers, ...rows];
-        
-        // Converter para CSV
-        return allRows.map(row => 
-            row.map(cell => {
-                const value = String(cell);
-                if (value.includes(',') || value.includes('"')) {
-                    return `"${value.replace(/"/g, '""')}"`;
-                }
-                return value;
-            }).join(',')
-        ).join('\n');
+        try {
+            // Converter registros para formato padronizado
+            const csvData = records.map(record => ({
+                id: record.id || '',
+                data: record.date || '',
+                modelo: (record.model && record.model.modelo) || '',
+                fabricante: (record.model && record.model.fabricante) || '',
+                quantidade: record.quantity || 0,
+                observacoes: record.notes || '',
+                timestamp: record.timestamp || ''
+            }));
+            
+            // Usar parser CSV robusto se disponível
+            if (window.CSVParser) {
+                return window.CSVParser.stringify(csvData);
+            }
+            
+            // Fallback para conversão simples
+            const headers = ['id', 'data', 'modelo', 'fabricante', 'quantidade', 'observacoes', 'timestamp'];
+            const allRows = [headers, ...csvData.map(record => Object.values(record))];
+            
+            return allRows.map(row => 
+                row.map(cell => {
+                    const value = String(cell);
+                    if (value.includes(',') || value.includes('"')) {
+                        return `"${value.replace(/"/g, '""')}"`;
+                    }
+                    return value;
+                }).join(',')
+            ).join('\n');
+            
+        } catch (error) {
+            console.error('❌ Erro ao converter para CSV:', error);
+            return '';
+        }
     }
     
     /**

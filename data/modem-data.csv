@@ -1,0 +1,5 @@
+id,data,modelo,fabricante,quantidade,observacoes,timestamp
+1,2025-07-02,Motorola SB6141,Motorola,10,Gravação inicial de teste,2025-07-02T20:34:00.000Z
+2,2025-07-02,ARRIS SB8200,ARRIS,5,Teste de integração GitHub,2025-07-02T20:34:00.000Z
+3,2025-07-02,Huawei EG8145V5,Huawei,15,Lote de produção,2025-07-02T20:34:00.000Z
+4,2025-07-02,Nokia G-1425G-B,Nokia,8,Teste de qualidade,2025-07-02T20:34:00.000Z 

@@ -37,6 +37,7 @@
     <link rel="stylesheet" href="css/center-fix.css">
     <link rel="stylesheet" href="css/sidebar-floating.css">
     <link rel="stylesheet" href="css/diagnostic-styles.css">
+    <link rel="stylesheet" href="css/github-sync-styles.css">
 
 </head>
 <body>
@@ -770,44 +771,101 @@
     </div> <!-- Fim do main-app -->
     
     <!-- Scripts -->
+    <script src="js/csv-parser.js"></script>
     <script src="js/script.js"></script>
     <script src="js/google-sheets-integration.js"></script>
     <script src="js/debug-sync.js"></script>
     <script src="js/github-integration.js"></script>
     
     <!-- GitHub Integration Section -->
-    <div id="github-integration-section" class="card" style="display: none;">
+    <div id="github-integration-section" class="card">
         <div class="card-header">
             <h3>🔗 Integração GitHub</h3>
             <div class="card-actions">
                 <button id="github-sync-btn" class="btn btn-primary">
-                    <i class="fas fa-sync"></i> Sincronizar GitHub
+                    <i class="fas fa-sync"></i> Sincronizar
                 </button>
                 <button id="github-export-btn" class="btn btn-secondary">
-                    <i class="fas fa-upload"></i> Exportar para GitHub
+                    <i class="fas fa-upload"></i> Exportar
+                </button>
+                <button id="github-trigger-workflow-btn" class="btn btn-accent">
+                    <i class="fas fa-play"></i> Trigger Workflow
                 </button>
             </div>
         </div>
         
         <div class="card-content">
-            <div class="github-status-container">
-                <div id="github-status">
-                    <div class="github-status">
-                        <span class="status-indicator disconnected"></span>
-                        <span>Nunca sincronizado</span>
+            <div class="sync-status-dashboard">
+                <div class="status-grid">
+                    <div class="status-item">
+                        <div class="status-icon">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <div class="status-details">
+                            <div class="status-label">Status da Conexão</div>
+                            <div id="connection-status" class="status-value disconnected">Desconectado</div>
+                        </div>
+                    </div>
+                    
+                    <div class="status-item">
+                        <div class="status-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="status-details">
+                            <div class="status-label">Última Sincronização</div>
+                            <div id="last-sync-display" class="status-value">Nunca</div>
+                        </div>
+                    </div>
+                    
+                    <div class="status-item">
+                        <div class="status-icon">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <div class="status-details">
+                            <div class="status-label">Registros Sincronizados</div>
+                            <div id="sync-record-count" class="status-value">0</div>
+                        </div>
+                    </div>
+                    
+                    <div class="status-item">
+                        <div class="status-icon">
+                            <i class="fas fa-cogs"></i>
+                        </div>
+                        <div class="status-details">
+                            <div class="status-label">Auto-Sync</div>
+                            <div class="status-value">
+                                <label class="switch" for="github-auto-sync">
+                                    <input type="checkbox" id="github-auto-sync" aria-label="Habilitar sincronização automática">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="github-controls">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="github-auto-sync">
-                        <span>Auto-sync a cada 30 minutos</span>
-                    </label>
+                <div class="sync-progress" id="sync-progress" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="sync-progress-fill"></div>
+                    </div>
+                    <div class="progress-text" id="sync-progress-text">Sincronizando...</div>
                 </div>
                 
-                <div class="github-info">
-                    <p><strong>📊 Dados CSV:</strong> <a href="https://raw.githubusercontent.com/pastor598/sistema-controle-modems/main/data/modem-data.csv" target="_blank" rel="noopener">Ver dados atuais</a></p>
-                    <p><strong>📋 Metadata:</strong> <a href="https://raw.githubusercontent.com/pastor598/sistema-controle-modems/main/data/metadata.json" target="_blank" rel="noopener">Ver informações</a></p>
+                <div class="github-links">
+                    <h4><i class="fas fa-link"></i> Links Úteis</h4>
+                    <div class="link-grid">
+                        <a href="https://raw.githubusercontent.com/pastor598/sistema-controle-modems/main/data/modem-data.csv" target="_blank" rel="noopener" class="github-link">
+                            <i class="fas fa-file-csv"></i> Ver CSV Atual
+                        </a>
+                        <a href="https://raw.githubusercontent.com/pastor598/sistema-controle-modems/main/data/metadata.json" target="_blank" rel="noopener" class="github-link">
+                            <i class="fas fa-info-circle"></i> Ver Metadata
+                        </a>
+                        <a href="https://github.com/pastor598/sistema-controle-modems/actions" target="_blank" rel="noopener" class="github-link">
+                            <i class="fas fa-play-circle"></i> GitHub Actions
+                        </a>
+                        <a href="https://github.com/pastor598/sistema-controle-modems" target="_blank" rel="noopener" class="github-link">
+                            <i class="fab fa-github"></i> Repositório
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

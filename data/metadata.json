@@ -1,0 +1,25 @@
+{
+  "lastUpdate": "2025-07-02T20:34:00.000Z",
+  "recordCount": 4,
+  "version": "1.0",
+  "source": "ModemControl Pro",
+  "schema": {
+    "id": "number - Identificador único do registro",
+    "data": "string - Data da gravação (YYYY-MM-DD)",
+    "modelo": "string - Modelo do modem",
+    "fabricante": "string - Fabricante do modem",
+    "quantidade": "number - Quantidade gravada",
+    "observacoes": "string - Observações sobre a gravação",
+    "timestamp": "string - Timestamp ISO 8601 da criação"
+  },
+  "statistics": {
+    "totalQuantity": 38,
+    "manufacturerCount": {
+      "Motorola": 10,
+      "ARRIS": 5,
+      "Huawei": 15,
+      "Nokia": 8
+    },
+    "averagePerDay": 9.5
+  }
+} 

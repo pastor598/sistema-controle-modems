@@ -20,7 +20,7 @@ on:
 jobs:
   export-data:
     name: 🚀 Export & Sync Data
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-18.04
     timeout-minutes: 10
     
     outputs:
@@ -29,34 +29,35 @@ jobs:
       export-status: ${{ steps.export.outputs.status }}
     
     steps:
-    - name: 📂 Checkout repository
-      uses: actions/checkout@v3
-      with:
-        fetch-depth: 1
-        token: ${{ secrets.GITHUB_TOKEN }}
-    
-    - name: 🧹 Prevent Node.js detection
-      shell: bash
-      run: |
-        set -e
-        echo "🧹 Removendo qualquer indicação de projeto Node.js"
-        rm -f package.json package-lock.json yarn.lock pnpm-lock.yaml
-        rm -rf node_modules .npm .yarn
-        rm -f .nvmrc .node-version
-        echo "✅ Ambiente limpo de dependências Node.js"
-    
-    - name: 📊 Generate and export data
-      id: export
+    - name: 📂 Manual checkout to avoid detection
       shell: bash
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         set -e
+        echo "🔧 Fazendo checkout manual para evitar detecção automática"
         
-        # Criar diretório de dados se não existir
+        # Clonar repositório manualmente
+        git clone https://x-access-token:$GITHUB_TOKEN@github.com/${{ github.repository }}.git .
+        git checkout ${{ github.sha }}
+        
+        # Remover IMEDIATAMENTE qualquer arquivo que possa causar detecção
+        rm -rf .git/hooks
+        rm -f package.json package-lock.json yarn.lock pnpm-lock.yaml
+        rm -rf node_modules .npm .yarn .pnpm
+        rm -f .nvmrc .node-version .yarnrc .npmrc
+        
+        echo "✅ Checkout manual concluído sem detecção de dependências"
+    
+    - name: 📊 Generate and export data
+      id: export
+      shell: bash
+      run: |
+        set -e
+        
+        # Criar diretório de dados
         mkdir -p data
         
-        # Gerar dados realistas de modems
         echo "📊 Gerando dados de modems..."
         
         # Criar CSV com header
@@ -66,11 +67,9 @@ jobs:
         for i in {0..29}; do
           date_str=$(date -d "$i days ago" '+%Y-%m-%d' 2>/dev/null || date '+%Y-%m-%d')
           
-          # Arrays de modelos e fabricantes
           models=("EG8145V5" "EG8145X6" "G-1425G-B" "G-140W-C" "HG8145V5")
           manufacturers=("Huawei" "Nokia" "TP-Link" "Fiberhome" "Datacom")
           
-          # Gerar 1-3 registros por dia
           num_records=$((RANDOM % 3 + 1))
           
           for j in $(seq 1 $num_records); do
@@ -96,7 +95,7 @@ jobs:
         
         # Criar metadata
         timestamp=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
-        echo "{\"lastUpdate\":\"$timestamp\",\"recordCount\":$record_count,\"fileSize\":$file_size,\"version\":\"3.0\",\"source\":\"GitHub Actions\"}" > data/metadata.json
+        echo "{\"lastUpdate\":\"$timestamp\",\"recordCount\":$record_count,\"fileSize\":$file_size,\"version\":\"4.0\",\"source\":\"Manual Checkout\"}" > data/metadata.json
         
         # Outputs
         echo "records-count=$record_count" >> $GITHUB_OUTPUT
@@ -105,7 +104,7 @@ jobs:
         
         echo "✅ Dados gerados: $record_count registros ($file_size bytes)"
     
-    - name: 💾 Commit and push changes
+    - name: 💾 Manual commit and push
       shell: bash
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -117,17 +116,17 @@ jobs:
         git config --local user.name "GitHub Action"
         
         # Verificar se há mudanças
-        if git diff --quiet data/; then
+        if git diff --quiet data/ 2>/dev/null; then
           echo "📋 Nenhuma mudança detectada nos dados"
           exit 0
         fi
         
         # Adicionar e fazer commit
         git add data/
-        git commit -m "📊 Atualizar dados de modems - $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+        git commit -m "📊 Atualizar dados de modems - $(date -u '+%Y-%m-%d %H:%M:%S UTC') [skip ci]"
         
-        # Push
-        git push
+        # Push manual
+        git push https://x-access-token:$GITHUB_TOKEN@github.com/${{ github.repository }}.git HEAD:${{ github.ref_name }}
         
         echo "✅ Dados sincronizados com sucesso"
     
@@ -138,4 +137,5 @@ jobs:
         echo "- **Registros processados:** ${{ steps.export.outputs.records-count }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Tamanho do arquivo:** ${{ steps.export.outputs.file-size }} bytes" >> $GITHUB_STEP_SUMMARY
         echo "- **Status:** ✅ Sucesso" >> $GITHUB_STEP_SUMMARY
+        echo "- **Método:** Manual checkout (sem detecção automática)" >> $GITHUB_STEP_SUMMARY
         echo "- **Timestamp:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY 

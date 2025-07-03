@@ -38,224 +38,77 @@ jobs:
         fetch-depth: 0
         token: ${{ secrets.GITHUB_TOKEN }}
         
-    - name: 📊 Create export script
-      run: |
-        cat > export-data.js << 'EOF'
-        const fs = require('fs');
-        const path = require('path');
-        
-        // Configurações
-        const config = {
-          maxRecords: 1000,
-          dataDir: process.env.DATA_DIR || 'data',
-          forceUpdate: process.env.FORCE_UPDATE === 'true'
-        };
-        
-        // Função para log estruturado
-        function log(level, message, data = null) {
-          const timestamp = new Date().toISOString();
-          const logEntry = { timestamp, level, message };
-          if (data) logEntry.data = data;
-          console.log(JSON.stringify(logEntry));
-        }
-        
-        // Função para gerar dados realistas
-        function generateModemData() {
-          const modelos = [
-            { modelo: "Motorola SB6141", fabricante: "Motorola" },
-            { modelo: "ARRIS SB8200", fabricante: "ARRIS" },
-            { modelo: "Huawei EG8145V5", fabricante: "Huawei" },
-            { modelo: "Nokia G-1425G-B", fabricante: "Nokia" },
-            { modelo: "TP-Link Archer C80", fabricante: "TP-Link" },
-            { modelo: "Technicolor TC8717T", fabricante: "Technicolor" }
-          ];
-          
-          const observacoes = [
-            "Gravação padrão",
-            "Teste de qualidade aprovado",
-            "Lote de produção",
-            "Configuração personalizada",
-            "Atualização de firmware",
-            "Teste de stress completo"
-          ];
-          
-          const today = new Date();
-          const records = [];
-          
-          // Gerar entre 3-8 registros por execução
-          const numRecords = Math.floor(Math.random() * 6) + 3;
-          
-          for (let i = 1; i <= numRecords; i++) {
-            const modelo = modelos[Math.floor(Math.random() * modelos.length)];
-            const obs = observacoes[Math.floor(Math.random() * observacoes.length)];
-            
-            records.push({
-              id: Date.now() + i,
-              data: today.toISOString().split('T')[0],
-              modelo: modelo.modelo,
-              fabricante: modelo.fabricante,
-              quantidade: Math.floor(Math.random() * 20) + 1,
-              observacoes: obs,
-              timestamp: new Date(today.getTime() + i * 1000).toISOString()
-            });
-          }
-          
-          return records;
-        }
-        
-        // Função para converter para CSV robusto
-        function arrayToCSV(data) {
-          if (!data.length) return '';
-          
-          const headers = Object.keys(data[0]);
-          const csvHeaders = headers.join(',');
-          
-          const csvRows = data.map(row => 
-            headers.map(header => {
-              let value = row[header];
-              if (value === null || value === undefined) value = '';
-              value = String(value);
-              
-              // Escapar vírgulas, aspas e quebras de linha
-              if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-                value = `"${value.replace(/"/g, '""')}"`;
-              }
-              return value;
-            }).join(',')
-          );
-          
-          return [csvHeaders, ...csvRows].join('\n');
-        }
-        
-        // Função principal
-        async function main() {
-          try {
-            log('INFO', 'Iniciando exportação de dados');
-            
-            // Criar diretórios
-            if (!fs.existsSync(config.dataDir)) {
-              fs.mkdirSync(config.dataDir, { recursive: true });
-            }
-            
-            // Ler dados existentes
-            let existingData = [];
-            const csvPath = path.join(config.dataDir, 'modem-data.csv');
-            
-            if (fs.existsSync(csvPath)) {
-              const existingCsv = fs.readFileSync(csvPath, 'utf8');
-              const lines = existingCsv.split('\n').filter(line => line.trim());
-              
-              if (lines.length > 1) {
-                const headers = lines[0].split(',');
-                existingData = lines.slice(1).map(line => {
-                  const values = line.split(',');
-                  const record = {};
-                  headers.forEach((header, index) => {
-                    record[header] = values[index] || '';
-                  });
-                  return record;
-                });
-              }
-            }
-            
-            // Gerar novos dados
-            const newData = generateModemData();
-            log('INFO', 'Novos dados gerados', { count: newData.length });
-            
-            // Combinar dados (manter últimos 500 registros)
-            const allData = [...existingData, ...newData]
-              .slice(-config.maxRecords)
-              .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-            
-            // Converter para CSV
-            const csvContent = arrayToCSV(allData);
-            
-            // Verificar se houve mudanças
-            const hasChanges = !fs.existsSync(csvPath) || 
-                              fs.readFileSync(csvPath, 'utf8') !== csvContent ||
-                              config.forceUpdate;
-            
-            if (hasChanges) {
-              // Salvar CSV
-              fs.writeFileSync(csvPath, csvContent);
-              log('INFO', 'CSV atualizado', { records: allData.length });
-              
-              // Criar metadata detalhada
-              const stats = allData.reduce((acc, record) => {
-                acc.manufacturers[record.fabricante] = (acc.manufacturers[record.fabricante] || 0) + parseInt(record.quantidade || 0);
-                acc.totalQuantity += parseInt(record.quantidade || 0);
-                return acc;
-              }, { manufacturers: {}, totalQuantity: 0 });
-              
-              const metadata = {
-                lastUpdate: new Date().toISOString(),
-                recordCount: allData.length,
-                newRecordsAdded: newData.length,
-                version: '2.0',
-                source: 'GitHub Actions',
-                statistics: {
-                  totalQuantity: stats.totalQuantity,
-                  averagePerRecord: Math.round(stats.totalQuantity / allData.length * 100) / 100,
-                  manufacturerDistribution: stats.manufacturers,
-                  dateRange: {
-                    earliest: allData[allData.length - 1]?.data,
-                    latest: allData[0]?.data
-                  }
-                },
-                workflow: {
-                  runId: process.env.GITHUB_RUN_ID,
-                  runNumber: process.env.GITHUB_RUN_NUMBER,
-                  actor: process.env.GITHUB_ACTOR,
-                  ref: process.env.GITHUB_REF,
-                  sha: process.env.GITHUB_SHA
-                }
-              };
-              
-              fs.writeFileSync(
-                path.join(config.dataDir, 'metadata.json'),
-                JSON.stringify(metadata, null, 2)
-              );
-              
-              // Outputs para o GitHub Actions
-              console.log(`::set-output name=records-count::${allData.length}`);
-              console.log(`::set-output name=file-size::${Math.round(csvContent.length / 1024 * 100) / 100}`);
-              console.log(`::set-output name=status::updated`);
-              
-              log('SUCCESS', 'Exportação concluída', {
-                totalRecords: allData.length,
-                newRecords: newData.length,
-                fileSizeKB: Math.round(csvContent.length / 1024 * 100) / 100
-              });
-              
-            } else {
-              console.log(`::set-output name=status::no-changes`);
-              log('INFO', 'Nenhuma mudança detectada');
-            }
-            
-          } catch (error) {
-            log('ERROR', 'Falha na exportação', { error: error.message, stack: error.stack });
-            console.log(`::set-output name=status::error`);
-            process.exit(1);
-          }
-        }
-        
-        main();
-        EOF
-        
     - name: 📁 Create directories
-      run: |
-        mkdir -p ${{ env.DATA_DIR }}
+      run: mkdir -p ${{ env.DATA_DIR }}
         
-    - name: 🚀 Run export script
+    - name: 🚀 Generate and export data
       id: export
-      run: node export-data.js
-      env:
-        FORCE_UPDATE: ${{ github.event.inputs.force_update || 'false' }}
-        GITHUB_RUN_ID: ${{ github.run_id }}
-        GITHUB_RUN_NUMBER: ${{ github.run_number }}
-        GITHUB_ACTOR: ${{ github.actor }}
-        GITHUB_REF: ${{ github.ref }}
-        GITHUB_SHA: ${{ github.sha }}
+      run: |
+        DATA_DIR="${{ env.DATA_DIR }}"
+        FORCE_UPDATE="${{ github.event.inputs.force_update || 'false' }}"
+        
+        # Gerar dados de exemplo
+        generate_data() {
+          local today=$(date '+%Y-%m-%d')
+          local timestamp=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+          local num_records=$((RANDOM % 6 + 3))
+          
+          for ((i=1; i<=num_records; i++)); do
+            local id=$(( $(date +%s) + i ))
+            local modelos=("Motorola SB6141" "ARRIS SB8200" "Huawei EG8145V5" "Nokia G-1425G-B" "TP-Link Archer C80")
+            local fabricantes=("Motorola" "ARRIS" "Huawei" "Nokia" "TP-Link")
+            local idx=$((RANDOM % ${#modelos[@]}))
+            local quantidade=$((RANDOM % 20 + 1))
+            local obs="Gravação padrão"
+            
+            echo "$id,$today,${modelos[$idx]},${fabricantes[$idx]},$quantidade,$obs,$timestamp"
+          done
+        }
+        
+        # Ler dados existentes
+        CSV_PATH="$DATA_DIR/modem-data.csv"
+        EXISTING_DATA=""
+        
+        if [[ -f "$CSV_PATH" ]]; then
+          EXISTING_DATA=$(tail -n +2 "$CSV_PATH" 2>/dev/null || true)
+        fi
+        
+        # Gerar novos dados
+        NEW_DATA=$(generate_data)
+        
+        # Combinar dados
+        ALL_DATA=$(echo -e "${EXISTING_DATA}\n${NEW_DATA}" | tail -n 1000)
+        
+        # Criar CSV
+        HEADERS="id,data,modelo,fabricante,quantidade,observacoes,timestamp"
+        CSV_CONTENT=$(echo -e "${HEADERS}\n${ALL_DATA}")
+        
+        # Verificar mudanças
+        HAS_CHANGES=false
+        if [[ ! -f "$CSV_PATH" ]] || [[ "$(cat "$CSV_PATH")" != "$CSV_CONTENT" ]] || [[ "$FORCE_UPDATE" == "true" ]]; then
+          HAS_CHANGES=true
+        fi
+        
+        if [[ "$HAS_CHANGES" == "true" ]]; then
+          # Salvar CSV
+          echo "$CSV_CONTENT" > "$CSV_PATH"
+          
+          # Criar metadata simples
+          RECORD_COUNT=$(echo "$CSV_CONTENT" | wc -l)
+          RECORD_COUNT=$((RECORD_COUNT - 1))
+          
+          echo '{"lastUpdate":"'$(date -u '+%Y-%m-%dT%H:%M:%SZ')'","recordCount":'$RECORD_COUNT',"newRecordsAdded":'$(echo "$NEW_DATA" | wc -l)',"version":"3.0","source":"GitHub Actions Bash"}' > "$DATA_DIR/metadata.json"
+          
+          # Outputs
+          echo "records-count=$RECORD_COUNT" >> $GITHUB_OUTPUT
+          echo "file-size=$(echo "$CSV_CONTENT" | wc -c | awk '{printf "%.2f", $1/1024}')" >> $GITHUB_OUTPUT
+          echo "status=updated" >> $GITHUB_OUTPUT
+          
+          echo "✅ Dados atualizados com sucesso"
+        else
+          echo "status=no-changes" >> $GITHUB_OUTPUT
+          echo "ℹ️ Nenhuma mudança detectada"
+        fi
         
     - name: 📈 Generate summary report
       if: always()
@@ -265,21 +118,11 @@ jobs:
         echo "- **Records**: ${{ steps.export.outputs.records-count }}" >> $GITHUB_STEP_SUMMARY
         echo "- **File Size**: ${{ steps.export.outputs.file-size }} KB" >> $GITHUB_STEP_SUMMARY
         echo "- **Timestamp**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
-        echo "- **Workflow**: [${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
         
-        # Links úteis
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "### 🔗 Links Úteis" >> $GITHUB_STEP_SUMMARY
         echo "- [📄 CSV Atual](https://raw.githubusercontent.com/${{ github.repository }}/main/data/modem-data.csv)" >> $GITHUB_STEP_SUMMARY
         echo "- [📋 Metadata](https://raw.githubusercontent.com/${{ github.repository }}/main/data/metadata.json)" >> $GITHUB_STEP_SUMMARY
-        
-        if [ -f "data/metadata.json" ]; then
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📋 Metadata Detalhada" >> $GITHUB_STEP_SUMMARY
-          echo '```json' >> $GITHUB_STEP_SUMMARY
-          cat data/metadata.json >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
-        fi
         
     - name: 🔄 Commit and push changes
       if: steps.export.outputs.export-status == 'updated'
@@ -290,7 +133,6 @@ jobs:
         
         git add data/
         
-        # Verificar se há mudanças para commit
         if git diff --staged --quiet; then
           echo "Nenhuma mudança para commit"
         else

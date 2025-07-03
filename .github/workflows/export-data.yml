@@ -25,9 +25,6 @@ jobs:
   export-data:
     name: 🚀 Export & Sync Data
     runs-on: ubuntu-latest
-    container:
-      image: alpine:3.18
-      options: --user root
     timeout-minutes: 10
     
     outputs:
@@ -36,51 +33,25 @@ jobs:
       export-status: ${{ steps.export.outputs.status }}
     
     steps:
-    - name: 🔧 Setup environment
-      shell: sh
-      run: |
-        set -e
-        echo "🔧 Configurando ambiente Alpine Linux"
-        
-        # Instalar ferramentas com suporte completo a HTTPS
-        apk add --no-cache git bash curl ca-certificates
-        
-        # Atualizar certificados CA
-        update-ca-certificates
-        
-        # Configurar git com configurações robustas
-        git config --global user.email "action@github.com"
-        git config --global user.name "GitHub Action"
-        git config --global --add safe.directory '*'
-        git config --global init.defaultBranch main
-        git config --global pull.rebase false
-        
-        echo "✅ Ambiente configurado com sucesso"
-    
-    - name: 📂 Checkout with proper permissions
+    - name: 📂 Checkout repository
       uses: actions/checkout@v4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         fetch-depth: 1
     
     - name: 🧹 Clean environment
-      shell: bash
       run: |
-        set -e
         echo "🧹 Limpando ambiente..."
         
         # Limpar arquivos que possam causar detecção de dependências
-        rm -rf node_modules .npm .yarn .pnpm package*.json yarn.lock pnpm-lock.yaml
-        rm -f .nvmrc .node-version .yarnrc .npmrc
+        rm -rf node_modules .npm .yarn .pnpm package*.json yarn.lock pnpm-lock.yaml || true
+        rm -f .nvmrc .node-version .yarnrc .npmrc || true
         
         echo "✅ Ambiente limpo"
     
     - name: 📊 Generate data
       id: export
-      shell: bash
       run: |
-        set -e
-        
         echo "📊 Gerando dados de modems..."
         
         # Criar diretório se não existir
@@ -89,46 +60,62 @@ jobs:
         # Criar header do CSV
         echo "Data,Modelo,Fabricante,Quantidade,Observacoes,Tempo_Gravacao_Min" > data/modem-data.csv
         
-        # Gerar dados dos últimos 30 dias
-        for i in $(seq 0 29); do
-          # Calcular data usando aritmética simples
-          if command -v date >/dev/null 2>&1; then
-            date_str=$(date -d "$i days ago" '+%Y-%m-%d' 2>/dev/null || date '+%Y-%m-%d')
-          else
-            date_str=$(date '+%Y-%m-%d')
-          fi
-          
-          # Selecionar modelo baseado no índice
-          case $((i % 5)) in
-            0) model="EG8145V5"; manufacturer="Huawei" ;;
-            1) model="EG8145X6"; manufacturer="Huawei" ;;
-            2) model="G-1425G-B"; manufacturer="Nokia" ;;
-            3) model="G-140W-C"; manufacturer="Nokia" ;;
-            *) model="HG8145V5"; manufacturer="TP-Link" ;;
-          esac
-          
-          # Gerar valores variados mas determinísticos
-          quantity=$((10 + (i % 15)))
-          time_min=$((3 + (i % 5)))
-          
-          # Adicionar observações ocasionais
-          if [ $((i % 4)) -eq 0 ]; then
-            observations="Lote prioritário"
-          else
-            observations=""
-          fi
-          
-          echo "$date_str,$model,$manufacturer,$quantity,$observations,$time_min" >> data/modem-data.csv
-        done
+        # Gerar dados dos últimos 30 dias usando Python para portabilidade
+        python3 << 'EOF'
+        import datetime
+        import csv
+        
+        # Modelos e fabricantes
+        models = [
+            ("EG8145V5", "Huawei"),
+            ("EG8145X6", "Huawei"), 
+            ("G-1425G-B", "Nokia"),
+            ("G-140W-C", "Nokia"),
+            ("HG8145V5", "TP-Link")
+        ]
+        
+        # Gerar dados para os últimos 30 dias
+        with open('data/modem-data.csv', 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writerow(['Data', 'Modelo', 'Fabricante', 'Quantidade', 'Observacoes', 'Tempo_Gravacao_Min'])
+            
+            for i in range(30):
+                # Calcular data
+                date_obj = datetime.date.today() - datetime.timedelta(days=i)
+                date_str = date_obj.strftime('%Y-%m-%d')
+                
+                # Selecionar modelo baseado no índice
+                model, manufacturer = models[i % len(models)]
+                
+                # Gerar valores variados mas determinísticos
+                quantity = 10 + (i % 15)
+                time_min = 3 + (i % 5)
+                
+                # Adicionar observações ocasionais
+                observations = "Lote prioritário" if i % 4 == 0 else ""
+                
+                writer.writerow([date_str, model, manufacturer, quantity, observations, time_min])
+        
+        print("✅ Dados CSV gerados com sucesso")
+        EOF
         
         # Contar registros e calcular tamanho
-        record_count=$(wc -l < data/modem-data.csv)
-        record_count=$((record_count - 1))  # Subtrair header
+        record_count=$(tail -n +2 data/modem-data.csv | wc -l)
         file_size=$(wc -c < data/modem-data.csv)
         
         # Criar metadata com informações completas
         timestamp=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
-        echo "{\"lastUpdate\":\"$timestamp\",\"recordCount\":$record_count,\"fileSize\":$file_size,\"version\":\"5.2-permissions\",\"source\":\"Alpine Container with Permissions\",\"gitSha\":\"${{ github.sha }}\"}" > data/metadata.json
+        cat > data/metadata.json << EOF
+        {
+          "lastUpdate": "$timestamp",
+          "recordCount": $record_count,
+          "fileSize": $file_size,
+          "version": "6.0-fixed",
+          "source": "Ubuntu Latest - Python Generation",
+          "gitSha": "${{ github.sha }}",
+          "workflow": "Fixed Exit Code 1 Issues"
+        }
+        EOF
         
         # Definir outputs
         echo "records-count=$record_count" >> $GITHUB_OUTPUT
@@ -137,39 +124,43 @@ jobs:
         
         echo "✅ Dados gerados: $record_count registros ($file_size bytes)"
     
-    - name: 💾 Commit and push with permissions
-      shell: bash
+    - name: 💾 Commit and push changes
       run: |
-        set -e
-        
-        # Configurar git para o commit
+        # Configurar git
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         
         # Verificar se há mudanças
-        if ! git diff --quiet data/ 2>/dev/null; then
+        if git diff --quiet data/ 2>/dev/null; then
+          echo "📋 Nenhuma mudança detectada nos dados"
+        else
           echo "📝 Detectadas mudanças, fazendo commit..."
           
           # Adicionar e fazer commit
           git add data/
-          git commit -m "📊 Dados atualizados com permissões corretas - $(date -u '+%Y-%m-%d %H:%M:%S UTC') [skip ci]"
+          git commit -m "📊 Dados atualizados automaticamente - $(date -u '+%Y-%m-%d %H:%M:%S UTC') [skip ci]"
           
           # Push usando o token automático
           git push
           
           echo "✅ Dados sincronizados com sucesso"
-        else
-          echo "📋 Nenhuma mudança detectada"
         fi
     
     - name: 📋 Summary
-      shell: bash
       run: |
-        echo "## 📊 Resumo da Execução (Permissions Fixed)" >> $GITHUB_STEP_SUMMARY
-        echo "- **Registros processados:** ${{ steps.export.outputs.records-count }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Tamanho do arquivo:** ${{ steps.export.outputs.file-size }} bytes" >> $GITHUB_STEP_SUMMARY
-        echo "- **Status:** ✅ Sucesso" >> $GITHUB_STEP_SUMMARY
-        echo "- **Método:** Alpine Container com permissões corretas" >> $GITHUB_STEP_SUMMARY
-        echo "- **Correção:** Permissões contents:write adicionadas" >> $GITHUB_STEP_SUMMARY
-        echo "- **Token:** GITHUB_TOKEN automático usado" >> $GITHUB_STEP_SUMMARY
-        echo "- **Timestamp:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY 
+        {
+          echo "## 📊 Resumo da Execução (Exit Code 1 Fixed)"
+          echo "- **Registros processados:** ${{ steps.export.outputs.records-count }}"
+          echo "- **Tamanho do arquivo:** ${{ steps.export.outputs.file-size }} bytes"
+          echo "- **Status:** ✅ Sucesso"
+          echo "- **Método:** Ubuntu Latest + Python para portabilidade"
+          echo "- **Correção:** Removido Alpine Container, usado Python para geração de dados"
+          echo "- **Token:** GITHUB_TOKEN automático"
+          echo "- **Timestamp:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo ""
+          echo "### 🔧 Correções Aplicadas:"
+          echo "- ✅ Removido container Alpine (causa de incompatibilidades)"
+          echo "- ✅ Usado Python para geração de dados (mais portável)"
+          echo "- ✅ Simplificado comandos shell"
+          echo "- ✅ Melhorado tratamento de erros"
+        } >> $GITHUB_STEP_SUMMARY 

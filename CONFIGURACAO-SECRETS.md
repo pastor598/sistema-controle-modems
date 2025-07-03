@@ -14,19 +14,22 @@ Para que o workflow funcione completamente, você precisa configurar os seguinte
 ### 📊 Secrets para Google Sheets (Opcionais)
 
 2. **`GOOGLE_SHEET_ID`**
-   - **Descrição**: ID da planilha Google Sheets
+   - **Descrição**: ID da planilha Google Sheets de destino
    - **Como obter**: Na URL da planilha entre `/spreadsheets/d/` e `/edit`
    - **Exemplo**: `1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms`
+   - **Uso**: Cria 3 worksheets automaticamente: ModemData, Statistics, Changelog
 
 3. **`GSHEET_CLIENT_EMAIL`**
    - **Descrição**: Email da conta de serviço Google
    - **Como obter**: No arquivo JSON da conta de serviço
    - **Exemplo**: `meu-projeto@meu-projeto.iam.gserviceaccount.com`
+   - **Permissão**: Deve ter acesso de Editor à planilha
 
 4. **`GSHEET_PRIVATE_KEY`**
    - **Descrição**: Chave privada da conta de serviço
    - **Como obter**: No arquivo JSON da conta de serviço (campo `private_key`)
    - **Formato**: Incluir `-----BEGIN PRIVATE KEY-----` e `-----END PRIVATE KEY-----`
+   - **Importante**: Manter quebras de linha originais
 
 ---
 
@@ -124,6 +127,9 @@ Do arquivo JSON baixado, extraia:
 1. **Arquivo CSV**: Verifique se `data/modem-data.csv` foi atualizado
 2. **Metadata**: Verifique se `data/metadata.json` contém dados atualizados
 3. **Google Sheets**: Verifique se a planilha foi atualizada (se configurado)
+   - **ModemData**: Dados principais dos modems
+   - **Statistics**: Estatísticas e métricas detalhadas
+   - **Changelog**: Histórico de execuções do workflow
 
 ---
 

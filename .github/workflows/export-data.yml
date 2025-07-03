@@ -311,9 +311,46 @@ jobs:
         echo "- **Timestamp**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
         echo "- **Workflow**: [${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
         
+        # Google Sheets status
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🔗 Google Sheets Integration" >> $GITHUB_STEP_SUMMARY
+        
+        if [ "${{ steps.sheets-setup.outputs.enabled }}" == "true" ]; then
+          if [ "${{ steps.export-sheets.outcome }}" == "success" ]; then
+            echo "- **Status**: ✅ Sincronizado com sucesso" >> $GITHUB_STEP_SUMMARY
+            echo "- **Planilha ID**: \`${{ secrets.GOOGLE_SHEET_ID }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "- **Worksheets**: ModemData, Statistics, Changelog" >> $GITHUB_STEP_SUMMARY
+            echo "- **Dados Exportados**: ${{ steps.prepare-sheets-data.outputs.rows }} linhas" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- **Status**: ❌ Falha na sincronização" >> $GITHUB_STEP_SUMMARY
+            echo "- **Motivo**: Erro durante export para Google Sheets" >> $GITHUB_STEP_SUMMARY
+          fi
+        elif [ "${{ steps.sheets-setup.outputs.reason }}" == "missing-secrets" ]; then
+          echo "- **Status**: ⚠️ Não configurado" >> $GITHUB_STEP_SUMMARY
+          echo "- **Motivo**: Secrets do Google Sheets não configurados" >> $GITHUB_STEP_SUMMARY
+          echo "- **Ação**: Configure GSHEET_CLIENT_EMAIL e GSHEET_PRIVATE_KEY" >> $GITHUB_STEP_SUMMARY
+        elif [ "${{ steps.sheets-setup.outputs.reason }}" == "missing-sheet-id" ]; then
+          echo "- **Status**: ⚠️ Não configurado" >> $GITHUB_STEP_SUMMARY
+          echo "- **Motivo**: GOOGLE_SHEET_ID não configurado" >> $GITHUB_STEP_SUMMARY
+          echo "- **Ação**: Configure o ID da planilha de destino" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "- **Status**: ⏭️ Pulado" >> $GITHUB_STEP_SUMMARY
+          echo "- **Motivo**: Export to sheets = false ou não é schedule" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        # Links úteis
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🔗 Links Úteis" >> $GITHUB_STEP_SUMMARY
+        echo "- [📄 CSV Atual](https://raw.githubusercontent.com/${{ github.repository }}/main/data/modem-data.csv)" >> $GITHUB_STEP_SUMMARY
+        echo "- [📋 Metadata](https://raw.githubusercontent.com/${{ github.repository }}/main/data/metadata.json)" >> $GITHUB_STEP_SUMMARY
+        
+        if [ "${{ steps.sheets-setup.outputs.enabled }}" == "true" ] && [ "${{ steps.export-sheets.outcome }}" == "success" ]; then
+          echo "- [📊 Google Sheets](https://docs.google.com/spreadsheets/d/${{ secrets.GOOGLE_SHEET_ID }})" >> $GITHUB_STEP_SUMMARY
+        fi
+        
         if [ -f "data/metadata.json" ]; then
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📋 Metadata" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Metadata Detalhada" >> $GITHUB_STEP_SUMMARY
           echo '```json' >> $GITHUB_STEP_SUMMARY
           cat data/metadata.json >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
@@ -353,19 +390,129 @@ jobs:
       id: prepare-sheets-data
       if: steps.export.outputs.export-status == 'updated'
       run: |
+        echo "🔄 Preparando dados para Google Sheets..."
+        
+        # Verificar se o arquivo CSV existe
+        if [ ! -f "data/modem-data.csv" ]; then
+          echo "❌ Arquivo CSV não encontrado!"
+          exit 1
+        fi
+        
         # Converter CSV para formato JSON array para Google Sheets
-        if [ -f "data/modem-data.csv" ]; then
-          node -e "
-            const fs = require('fs');
+        node -e "
+          const fs = require('fs');
+          
+          try {
             const csv = fs.readFileSync('data/modem-data.csv', 'utf8');
             const lines = csv.split('\n').filter(line => line.trim());
-            const data = lines.map(line => line.split(','));
+            
+            if (lines.length === 0) {
+              console.log('❌ CSV vazio!');
+              process.exit(1);
+            }
+            
+            // Processar CSV com escape de caracteres
+            const data = lines.map(line => {
+              const fields = [];
+              let current = '';
+              let inQuotes = false;
+              
+              for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                
+                if (char === '\"') {
+                  if (inQuotes && line[i + 1] === '\"') {
+                    current += '\"';
+                    i++; // Skip next quote
+                  } else {
+                    inQuotes = !inQuotes;
+                  }
+                } else if (char === ',' && !inQuotes) {
+                  fields.push(current);
+                  current = '';
+                } else {
+                  current += char;
+                }
+              }
+              fields.push(current); // Add last field
+              
+              return fields;
+            });
+            
+            console.log('✅ CSV processado:', data.length, 'linhas');
             console.log('::set-output name=data::' + JSON.stringify(data));
-          "
+            console.log('::set-output name=rows::' + data.length);
+            console.log('::set-output name=status::success');
+            
+          } catch (error) {
+            console.log('❌ Erro ao processar CSV:', error.message);
+            console.log('::set-output name=status::error');
+            process.exit(1);
+          }
+        "
+
+    - name: 📊 Setup Google Sheets Integration
+      id: sheets-setup
+      if: steps.prepare-sheets-data.outputs.status == 'success' && (github.event.inputs.export_to_sheets == 'true' || github.event_name == 'schedule')
+      run: |
+        echo "🔧 Configurando integração com Google Sheets..."
+        
+        # Verificar se os secrets necessários estão configurados
+        if [ -z "${{ secrets.GSHEET_CLIENT_EMAIL }}" ] || [ -z "${{ secrets.GSHEET_PRIVATE_KEY }}" ]; then
+          echo "⚠️ Secrets do Google Sheets não configurados - pulando sincronização"
+          echo "::set-output name=enabled::false"
+          echo "::set-output name=reason::missing-secrets"
+        elif [ -z "${{ secrets.GOOGLE_SHEET_ID }}" ]; then
+          echo "⚠️ GOOGLE_SHEET_ID não configurado - pulando sincronização"
+          echo "::set-output name=enabled::false"
+          echo "::set-output name=reason::missing-sheet-id"
+        else
+          echo "✅ Configuração do Google Sheets válida"
+          echo "::set-output name=enabled::true"
+          echo "::set-output name=sheet-id::${{ secrets.GOOGLE_SHEET_ID }}"
         fi
 
-    - name: 📤 Export to Google Sheets (Optional)
-      if: steps.export.outputs.export-status == 'updated' && (github.event.inputs.export_to_sheets == 'true' || github.event_name == 'schedule')
+    - name: 📋 Create/Update ModemData Worksheet
+      id: create-worksheet
+      if: steps.sheets-setup.outputs.enabled == 'true'
+      uses: jroehl/gsheet.action@v2.1.1
+      with:
+        spreadsheetId: ${{ secrets.GOOGLE_SHEET_ID }}
+        commands: |
+          [
+            {
+              "command": "getWorksheet",
+              "args": {
+                "worksheetTitle": "ModemData"
+              }
+            }
+          ]
+      env:
+        GSHEET_CLIENT_EMAIL: ${{ secrets.GSHEET_CLIENT_EMAIL }}
+        GSHEET_PRIVATE_KEY: ${{ secrets.GSHEET_PRIVATE_KEY }}
+      continue-on-error: true
+
+    - name: 🆕 Create ModemData Worksheet if not exists
+      if: steps.sheets-setup.outputs.enabled == 'true' && steps.create-worksheet.outcome == 'failure'
+      uses: jroehl/gsheet.action@v2.1.1
+      with:
+        spreadsheetId: ${{ secrets.GOOGLE_SHEET_ID }}
+        commands: |
+          [
+            {
+              "command": "addWorksheet",
+              "args": {
+                "worksheetTitle": "ModemData"
+              }
+            }
+          ]
+      env:
+        GSHEET_CLIENT_EMAIL: ${{ secrets.GSHEET_CLIENT_EMAIL }}
+        GSHEET_PRIVATE_KEY: ${{ secrets.GSHEET_PRIVATE_KEY }}
+
+    - name: 📤 Export to Google Sheets - Main Data
+      id: export-sheets
+      if: steps.sheets-setup.outputs.enabled == 'true'
       uses: jroehl/gsheet.action@v2.1.1
       with:
         spreadsheetId: ${{ secrets.GOOGLE_SHEET_ID }}
@@ -374,9 +521,172 @@ jobs:
             {
               "command": "updateData",
               "args": {
-                "data": "${{ steps.prepare-sheets-data.outputs.data }}",
+                "data": ${{ steps.prepare-sheets-data.outputs.data }},
                 "worksheetTitle": "ModemData",
                 "minRow": 1,
+                "minCol": 1,
+                "valueInputOption": "RAW"
+              }
+            }
+          ]
+      env:
+        GSHEET_CLIENT_EMAIL: ${{ secrets.GSHEET_CLIENT_EMAIL }}
+        GSHEET_PRIVATE_KEY: ${{ secrets.GSHEET_PRIVATE_KEY }}
+
+    - name: 📈 Create Statistics Worksheet
+      if: steps.export-sheets.outcome == 'success'
+      uses: jroehl/gsheet.action@v2.1.1
+      with:
+        spreadsheetId: ${{ secrets.GOOGLE_SHEET_ID }}
+        commands: |
+          [
+            {
+              "command": "getWorksheet",
+              "args": {
+                "worksheetTitle": "Statistics"
+              }
+            }
+          ]
+      env:
+        GSHEET_CLIENT_EMAIL: ${{ secrets.GSHEET_CLIENT_EMAIL }}
+        GSHEET_PRIVATE_KEY: ${{ secrets.GSHEET_PRIVATE_KEY }}
+      continue-on-error: true
+
+    - name: 🆕 Add Statistics Worksheet if not exists
+      if: steps.export-sheets.outcome == 'success'
+      uses: jroehl/gsheet.action@v2.1.1
+      with:
+        spreadsheetId: ${{ secrets.GOOGLE_SHEET_ID }}
+        commands: |
+          [
+            {
+              "command": "addWorksheet",
+              "args": {
+                "worksheetTitle": "Statistics"
+              }
+            }
+          ]
+      env:
+        GSHEET_CLIENT_EMAIL: ${{ secrets.GSHEET_CLIENT_EMAIL }}
+        GSHEET_PRIVATE_KEY: ${{ secrets.GSHEET_PRIVATE_KEY }}
+      continue-on-error: true
+
+    - name: 📊 Export Statistics to Google Sheets
+      if: steps.export-sheets.outcome == 'success'
+      run: |
+        # Gerar estatísticas para Google Sheets
+        node -e "
+          const fs = require('fs');
+          
+          try {
+            const metadata = JSON.parse(fs.readFileSync('data/metadata.json', 'utf8'));
+            const stats = metadata.statistics || {};
+            
+            // Criar dados de estatísticas em formato tabular
+            const statsData = [
+              ['Métrica', 'Valor', 'Última Atualização'],
+              ['Total de Registros', metadata.recordCount || 0, metadata.lastUpdate || 'N/A'],
+              ['Novos Registros', metadata.newRecordsAdded || 0, metadata.lastUpdate || 'N/A'],
+              ['Quantidade Total', stats.totalQuantity || 0, metadata.lastUpdate || 'N/A'],
+              ['Média por Registro', stats.averagePerRecord || 0, metadata.lastUpdate || 'N/A'],
+              ['Versão', metadata.version || 'N/A', metadata.lastUpdate || 'N/A'],
+              ['Fonte', metadata.source || 'N/A', metadata.lastUpdate || 'N/A']
+            ];
+            
+            // Adicionar distribuição por fabricante
+            if (stats.manufacturerDistribution) {
+              statsData.push(['', '', '']); // Linha vazia
+              statsData.push(['Fabricante', 'Quantidade', 'Percentual']);
+              
+              const total = stats.totalQuantity || 1;
+              Object.entries(stats.manufacturerDistribution).forEach(([manufacturer, count]) => {
+                const percentage = Math.round((count / total) * 100 * 100) / 100;
+                statsData.push([manufacturer, count, percentage + '%']);
+              });
+            }
+            
+            console.log('::set-output name=stats-data::' + JSON.stringify(statsData));
+            console.log('✅ Estatísticas preparadas:', statsData.length, 'linhas');
+            
+          } catch (error) {
+            console.log('❌ Erro ao gerar estatísticas:', error.message);
+            console.log('::set-output name=stats-data::[]');
+          }
+        "
+      id: prepare-stats
+
+    - name: 📊 Update Statistics in Google Sheets
+      if: steps.export-sheets.outcome == 'success' && steps.prepare-stats.outputs.stats-data != '[]'
+      uses: jroehl/gsheet.action@v2.1.1
+      with:
+        spreadsheetId: ${{ secrets.GOOGLE_SHEET_ID }}
+        commands: |
+          [
+            {
+              "command": "updateData",
+              "args": {
+                "data": ${{ steps.prepare-stats.outputs.stats-data }},
+                "worksheetTitle": "Statistics",
+                "minRow": 1,
+                "minCol": 1,
+                "valueInputOption": "RAW"
+              }
+            }
+          ]
+      env:
+        GSHEET_CLIENT_EMAIL: ${{ secrets.GSHEET_CLIENT_EMAIL }}
+        GSHEET_PRIVATE_KEY: ${{ secrets.GSHEET_PRIVATE_KEY }}
+
+    - name: 📝 Create Changelog Worksheet
+      if: steps.export-sheets.outcome == 'success'
+      uses: jroehl/gsheet.action@v2.1.1
+      with:
+        spreadsheetId: ${{ secrets.GOOGLE_SHEET_ID }}
+        commands: |
+          [
+            {
+              "command": "getWorksheet",
+              "args": {
+                "worksheetTitle": "Changelog"
+              }
+            }
+          ]
+      env:
+        GSHEET_CLIENT_EMAIL: ${{ secrets.GSHEET_CLIENT_EMAIL }}
+        GSHEET_PRIVATE_KEY: ${{ secrets.GSHEET_PRIVATE_KEY }}
+      continue-on-error: true
+
+    - name: 🆕 Add Changelog Worksheet if not exists
+      if: steps.export-sheets.outcome == 'success'
+      uses: jroehl/gsheet.action@v2.1.1
+      with:
+        spreadsheetId: ${{ secrets.GOOGLE_SHEET_ID }}
+        commands: |
+          [
+            {
+              "command": "addWorksheet",
+              "args": {
+                "worksheetTitle": "Changelog"
+              }
+            }
+          ]
+      env:
+        GSHEET_CLIENT_EMAIL: ${{ secrets.GSHEET_CLIENT_EMAIL }}
+        GSHEET_PRIVATE_KEY: ${{ secrets.GSHEET_PRIVATE_KEY }}
+      continue-on-error: true
+
+    - name: 📝 Append to Changelog
+      if: steps.export-sheets.outcome == 'success'
+      uses: jroehl/gsheet.action@v2.1.1
+      with:
+        spreadsheetId: ${{ secrets.GOOGLE_SHEET_ID }}
+        commands: |
+          [
+            {
+              "command": "appendData",
+              "args": {
+                "data": [["${{ github.run_number }}", "${{ steps.export.outputs.records-count }}", "${{ steps.export.outputs.file-size }}", "${{ github.actor }}", "${{ github.ref }}", "${{ github.sha }}", "${{ github.event_name }}", "${{ github.run_id }}"]],
+                "worksheetTitle": "Changelog",
                 "minCol": 1,
                 "valueInputOption": "RAW"
               }

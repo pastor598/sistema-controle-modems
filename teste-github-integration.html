@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔗 Teste Integração GitHub - ModemControl Pro</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .header p { font-size: 1.2em; opacity: 0.9; }
+        .status { 
+            display: flex; 
+            justify-content: space-around; 
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .status-item { 
+            text-align: center; 
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            min-width: 150px;
+        }
+        .status-icon { 
+            font-size: 2.5em; 
+            margin-bottom: 10px; 
+        }
+        .status-value { 
+            font-size: 1.8em; 
+            font-weight: bold; 
+            margin-bottom: 5px; 
+        }
+        .status-label { 
+            color: #666; 
+            font-size: 0.9em; 
+        }
+        .content { 
+            padding: 30px; 
+        }
+        .section { 
+            margin-bottom: 40px; 
+        }
+        .section h2 { 
+            color: #4facfe; 
+            margin-bottom: 20px; 
+            font-size: 1.8em;
+            border-bottom: 2px solid #4facfe;
+            padding-bottom: 10px;
+        }
+        .data-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .data-table th { 
+            background: #4facfe; 
+            color: white; 
+            padding: 15px; 
+            text-align: left; 
+        }
+        .data-table td { 
+            padding: 12px 15px; 
+            border-bottom: 1px solid #e9ecef; 
+        }
+        .data-table tr:hover { 
+            background: #f8f9fa; 
+        }
+        .loading { 
+            text-align: center; 
+            padding: 40px; 
+            color: #666; 
+        }
+        .loading::after {
+            content: "...";
+            animation: dots 1.5s steps(5, end) infinite;
+        }
+        @keyframes dots {
+            0%, 20% { color: rgba(0,0,0,0); text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); }
+            40% { color: black; text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); }
+            60% { text-shadow: .25em 0 0 black, .5em 0 0 rgba(0,0,0,0); }
+            80%, 100% { text-shadow: .25em 0 0 black, .5em 0 0 black; }
+        }
+        .error { 
+            background: #f8d7da; 
+            color: #721c24; 
+            padding: 15px; 
+            border-radius: 5px; 
+            margin: 20px 0; 
+        }
+        .success { 
+            background: #d4edda; 
+            color: #155724; 
+            padding: 15px; 
+            border-radius: 5px; 
+            margin: 20px 0; 
+        }
+        .refresh-btn {
+            background: #4facfe;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+        .refresh-btn:hover {
+            background: #357abd;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .links { 
+            display: flex; 
+            gap: 15px; 
+            flex-wrap: wrap; 
+            margin: 20px 0; 
+        }
+        .link-btn { 
+            background: #28a745; 
+            color: white; 
+            text-decoration: none; 
+            padding: 10px 20px; 
+            border-radius: 25px; 
+            transition: all 0.3s ease; 
+        }
+        .link-btn:hover { 
+            background: #218838; 
+            transform: translateY(-2px); 
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔗 Integração GitHub - ModemControl Pro</h1>
+            <p>Dados em tempo real diretamente do GitHub - Sem API Keys necessárias!</p>
+        </div>
+
+        <div class="status">
+            <div class="status-item">
+                <div class="status-icon">📊</div>
+                <div class="status-value" id="record-count">-</div>
+                <div class="status-label">Registros</div>
+            </div>
+            <div class="status-item">
+                <div class="status-icon">⏰</div>
+                <div class="status-value" id="last-update">-</div>
+                <div class="status-label">Última Atualização</div>
+            </div>
+            <div class="status-item">
+                <div class="status-icon">📁</div>
+                <div class="status-value" id="file-size">-</div>
+                <div class="status-label">Tamanho (KB)</div>
+            </div>
+            <div class="status-item">
+                <div class="status-icon">🔄</div>
+                <div class="status-value" id="status">-</div>
+                <div class="status-label">Status</div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="section">
+                <h2>🎯 Como Funciona</h2>
+                <div class="success">
+                    ✅ <strong>Integração 100% Funcional!</strong><br>
+                    • GitHub Actions executa automaticamente a cada 30 minutos<br>
+                    • Gera dados realistas e salva em CSV<br>
+                    • Acessível via URLs diretas (sem autenticação)<br>
+                    • Interface web sincroniza automaticamente
+                </div>
+                
+                <button class="refresh-btn" onclick="loadData()">🔄 Atualizar Dados</button>
+                
+                <div class="links">
+                    <a href="https://raw.githubusercontent.com/pastor598/sistema-controle-modems/main/data/modem-data.csv" 
+                       target="_blank" rel="noopener" class="link-btn">📄 Ver CSV</a>
+                    <a href="https://raw.githubusercontent.com/pastor598/sistema-controle-modems/main/data/metadata.json" 
+                       target="_blank" rel="noopener" class="link-btn">📋 Ver Metadata</a>
+                    <a href="https://github.com/pastor598/sistema-controle-modems/actions" 
+                       target="_blank" rel="noopener" class="link-btn">⚙️ GitHub Actions</a>
+                    <a href="index.html" class="link-btn">🏠 Dashboard Principal</a>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>📊 Dados Atuais</h2>
+                <div id="data-container">
+                    <div class="loading">Carregando dados do GitHub</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>📋 Metadata</h2>
+                <div id="metadata-container">
+                    <div class="loading">Carregando metadata</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // URLs dos dados no GitHub
+        const DATA_URL = 'https://raw.githubusercontent.com/pastor598/sistema-controle-modems/main/data/modem-data.csv';
+        const METADATA_URL = 'https://raw.githubusercontent.com/pastor598/sistema-controle-modems/main/data/metadata.json';
+
+                 // Função para carregar dados
+         async function loadData() {
+             try {
+                 console.log('🔄 Carregando dados do GitHub...');
+                 
+                 // Carregar CSV
+                 const csvResponse = await fetch(DATA_URL + '?t=' + Date.now());
+                 
+                 if (!csvResponse.ok) {
+                     throw new Error(`Erro HTTP ${csvResponse.status}: ${csvResponse.statusText}`);
+                 }
+                 
+                 const csvText = await csvResponse.text();
+                 console.log('📄 CSV carregado, tamanho:', csvText.length, 'bytes');
+                 
+                 // Verificar se o CSV não está vazio
+                 if (!csvText.trim()) {
+                     throw new Error('Arquivo CSV está vazio');
+                 }
+                 
+                 // Processar CSV com tratamento robusto
+                 const lines = csvText.trim().split('\n').filter(line => line.trim());
+                 
+                 if (lines.length < 2) {
+                     throw new Error('CSV deve ter pelo menos cabeçalho e uma linha de dados');
+                 }
+                 
+                 // Processar cabeçalho
+                 const headers = parseCSVLine(lines[0]);
+                 console.log('📋 Headers encontrados:', headers);
+                 
+                 // Processar dados
+                 const data = lines.slice(1).map((line, index) => {
+                     try {
+                         const values = parseCSVLine(line);
+                         const record = {};
+                         headers.forEach((header, headerIndex) => {
+                             record[header] = values[headerIndex] || '';
+                         });
+                         return record;
+                     } catch (lineError) {
+                         console.warn(`⚠️ Erro na linha ${index + 2}:`, lineError.message);
+                         return null;
+                     }
+                 }).filter(record => record !== null);
+
+                 console.log('📊 Dados processados:', data.length, 'registros');
+
+                 // Tentar carregar Metadata (opcional)
+                 let metadata = null;
+                 try {
+                     const metadataResponse = await fetch(METADATA_URL + '?t=' + Date.now());
+                     if (metadataResponse.ok) {
+                         const metadataText = await metadataResponse.text();
+                         if (metadataText.trim()) {
+                             metadata = JSON.parse(metadataText);
+                             console.log('📋 Metadata carregada:', metadata);
+                         }
+                     }
+                 } catch (metadataError) {
+                     console.warn('⚠️ Erro ao carregar metadata (não crítico):', metadataError.message);
+                     // Criar metadata básica se não conseguir carregar
+                     metadata = {
+                         lastUpdate: new Date().toISOString(),
+                         recordCount: data.length,
+                         source: 'GitHub CSV',
+                         version: '1.0'
+                     };
+                 }
+
+                 // Atualizar status
+                 document.getElementById('record-count').textContent = data.length;
+                 document.getElementById('last-update').textContent = metadata ? 
+                     new Date(metadata.lastUpdate).toLocaleString('pt-BR') : 
+                     'Agora';
+                 document.getElementById('file-size').textContent = Math.round(csvText.length / 1024 * 100) / 100;
+                 document.getElementById('status').textContent = '✅ Online';
+
+                 // Exibir dados
+                 displayData(data);
+                 displayMetadata(metadata);
+
+                 console.log('✅ Dados carregados com sucesso!');
+
+             } catch (error) {
+                 console.error('❌ Erro ao carregar dados:', error);
+                 
+                 document.getElementById('data-container').innerHTML = 
+                     '<div class="error">❌ Erro ao carregar dados: ' + error.message + 
+                     '<br><br>🔧 <strong>Possíveis soluções:</strong><br>' +
+                     '• Verifique se o repositório GitHub está público<br>' +
+                     '• Aguarde alguns minutos para o GitHub Actions gerar os dados<br>' +
+                     '• Tente recarregar a página<br>' +
+                     '• <a href="https://github.com/pastor598/sistema-controle-modems/actions" target="_blank" rel="noopener">Verificar GitHub Actions</a></div>';
+                 
+                 document.getElementById('metadata-container').innerHTML = 
+                     '<div class="error">❌ Erro ao carregar metadata</div>';
+                 
+                 document.getElementById('status').textContent = '❌ Erro';
+                 document.getElementById('record-count').textContent = '0';
+                 document.getElementById('last-update').textContent = 'Erro';
+                 document.getElementById('file-size').textContent = '0';
+             }
+         }
+
+         // Função para processar linha CSV com escape de caracteres
+         function parseCSVLine(line) {
+             const result = [];
+             let current = '';
+             let inQuotes = false;
+             
+             for (let i = 0; i < line.length; i++) {
+                 const char = line[i];
+                 
+                 if (char === '"') {
+                     if (inQuotes && line[i + 1] === '"') {
+                         // Aspas duplas escapadas
+                         current += '"';
+                         i++; // Pular próxima aspa
+                     } else {
+                         // Alternar estado de aspas
+                         inQuotes = !inQuotes;
+                     }
+                 } else if (char === ',' && !inQuotes) {
+                     // Vírgula fora de aspas = separador
+                     result.push(current.trim());
+                     current = '';
+                 } else {
+                     current += char;
+                 }
+             }
+             
+             // Adicionar último campo
+             result.push(current.trim());
+             
+             return result;
+         }
+
+        // Função para exibir dados em tabela
+        function displayData(data) {
+            if (!data.length) {
+                document.getElementById('data-container').innerHTML = 
+                    '<div class="error">Nenhum dado encontrado</div>';
+                return;
+            }
+
+            const headers = Object.keys(data[0]);
+            
+            let html = '<table class="data-table">';
+            html += '<thead><tr>';
+            headers.forEach(header => {
+                html += `<th>${header}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+
+            // Mostrar apenas os 10 registros mais recentes
+            data.slice(0, 10).forEach(record => {
+                html += '<tr>';
+                headers.forEach(header => {
+                    let value = record[header];
+                    if (header === 'data' && value) {
+                        value = new Date(value).toLocaleDateString('pt-BR');
+                    } else if (header === 'timestamp' && value) {
+                        value = new Date(value).toLocaleString('pt-BR');
+                    }
+                    html += `<td>${value}</td>`;
+                });
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            
+            if (data.length > 10) {
+                html += `<p style="text-align: center; margin-top: 15px; color: #666;">
+                    Mostrando 10 de ${data.length} registros. 
+                    <a href="${DATA_URL}" target="_blank">Ver todos no CSV</a>
+                </p>`;
+            }
+
+            document.getElementById('data-container').innerHTML = html;
+        }
+
+        // Função para exibir metadata
+        function displayMetadata(metadata) {
+            let html = '<table class="data-table">';
+            html += '<thead><tr><th>Propriedade</th><th>Valor</th></tr></thead><tbody>';
+
+            // Informações básicas
+            html += `<tr><td>Última Atualização</td><td>${new Date(metadata.lastUpdate).toLocaleString('pt-BR')}</td></tr>`;
+            html += `<tr><td>Total de Registros</td><td>${metadata.recordCount}</td></tr>`;
+            html += `<tr><td>Novos Registros</td><td>${metadata.newRecordsAdded}</td></tr>`;
+            html += `<tr><td>Versão</td><td>${metadata.version}</td></tr>`;
+            html += `<tr><td>Fonte</td><td>${metadata.source}</td></tr>`;
+
+            // Estatísticas
+            if (metadata.statistics) {
+                html += `<tr><td>Quantidade Total</td><td>${metadata.statistics.totalQuantity}</td></tr>`;
+                html += `<tr><td>Média por Registro</td><td>${metadata.statistics.averagePerRecord}</td></tr>`;
+                
+                if (metadata.statistics.manufacturerDistribution) {
+                    const manufacturers = Object.entries(metadata.statistics.manufacturerDistribution)
+                        .map(([name, count]) => `${name}: ${count}`)
+                        .join(', ');
+                    html += `<tr><td>Distribuição por Fabricante</td><td>${manufacturers}</td></tr>`;
+                }
+            }
+
+            // Workflow info
+            if (metadata.workflow) {
+                html += `<tr><td>Run ID</td><td>${metadata.workflow.runId}</td></tr>`;
+                html += `<tr><td>Run Number</td><td>#${metadata.workflow.runNumber}</td></tr>`;
+                html += `<tr><td>Actor</td><td>${metadata.workflow.actor}</td></tr>`;
+            }
+
+            html += '</tbody></table>';
+            document.getElementById('metadata-container').innerHTML = html;
+        }
+
+        // Carregar dados ao iniciar
+        loadData();
+
+        // Auto-refresh a cada 5 minutos
+        setInterval(loadData, 5 * 60 * 1000);
+    </script>
+</body>
+</html> 

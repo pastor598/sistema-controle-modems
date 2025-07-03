@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 Exportar para Planilha - ModemControl Pro</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .header p { font-size: 1.2em; opacity: 0.9; }
+        
+        .toolbar {
+            background: #f8f9fa;
+            padding: 20px 30px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-info { background: #17a2b8; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .content { 
+            padding: 30px; 
+        }
+        
+        .section { 
+            margin-bottom: 40px; 
+        }
+        
+        .section h2 { 
+            color: #17a2b8; 
+            margin-bottom: 20px; 
+            font-size: 1.8em;
+            border-bottom: 2px solid #17a2b8;
+            padding-bottom: 10px;
+        }
+        
+        .spreadsheet-container {
+            background: white;
+            border-radius: 10px;
+            overflow: auto;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin: 20px 0;
+            max-height: 600px;
+        }
+        
+        .spreadsheet-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+        }
+        
+        .spreadsheet-table th { 
+            background: #e9ecef; 
+            color: #495057; 
+            padding: 12px 8px; 
+            text-align: left; 
+            border: 1px solid #dee2e6;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .spreadsheet-table td { 
+            padding: 8px; 
+            border: 1px solid #dee2e6; 
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 120px;
+        }
+        
+        .spreadsheet-table tr:nth-child(even) { 
+            background: #f8f9fa; 
+        }
+        
+        .spreadsheet-table tr:hover { 
+            background: #e3f2fd; 
+        }
+        
+        .row-number {
+            background: #e9ecef !important;
+            color: #6c757d;
+            font-weight: bold;
+            text-align: center;
+            min-width: 40px;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        .col-header {
+            background: #e9ecef !important;
+            color: #6c757d;
+            font-weight: bold;
+            text-align: center;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        .loading { 
+            text-align: center; 
+            padding: 40px; 
+            color: #666; 
+        }
+        
+        .error { 
+            background: #f8d7da; 
+            color: #721c24; 
+            padding: 15px; 
+            border-radius: 5px; 
+            margin: 20px 0; 
+        }
+        
+        .success { 
+            background: #d4edda; 
+            color: #155724; 
+            padding: 15px; 
+            border-radius: 5px; 
+            margin: 20px 0; 
+        }
+        
+        .info-box {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid #17a2b8;
+        }
+        
+        .stats-row {
+            display: flex;
+            gap: 20px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .stat-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            min-width: 120px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #17a2b8;
+        }
+        
+        .stat-label {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        
+        .export-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .export-card {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .export-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        
+        .export-card h3 {
+            color: #17a2b8;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .export-card p {
+            color: #6c757d;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+        
+        .select-input {
+            padding: 8px 15px;
+            border: 1px solid #ced4da;
+            border-radius: 20px;
+            background: white;
+            color: #495057;
+        }
+        
+        .tutorial-steps {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .tutorial-steps h4 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+        
+        .tutorial-steps ol {
+            color: #856404;
+            margin-left: 20px;
+        }
+        
+        .tutorial-steps li {
+            margin-bottom: 8px;
+        }
+    </style>
+    <!-- Biblioteca para exportar Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Exportar para Planilha</h1>
+            <p>Visualize e exporte seus dados de modems para Excel, Google Sheets e CSV</p>
+        </div>
+
+        <div class="toolbar">
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="loadData()">
+                    🔄 Carregar Dados
+                </button>
+                <button class="btn btn-success" onclick="exportToExcel()" id="export-excel-btn" disabled>
+                    📗 Exportar Excel
+                </button>
+                <button class="btn btn-info" onclick="exportToCSV()" id="export-csv-btn" disabled>
+                    📄 Exportar CSV
+                </button>
+                <button class="btn btn-secondary" onclick="copyToClipboard()" id="copy-btn" disabled>
+                    📋 Copiar Dados
+                </button>
+            </div>
+            <div>
+                <select id="data-source" class="select-input" title="Selecionar fonte dos dados" aria-label="Selecionar fonte dos dados">
+                    <option value="local">Dados Locais</option>
+                    <option value="github">GitHub (Online)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="section">
+                <h2>📈 Estatísticas dos Dados</h2>
+                <div class="stats-row" id="stats-container">
+                    <div class="stat-box">
+                        <div class="stat-value" id="total-records">-</div>
+                        <div class="stat-label">Total Registros</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="total-quantity">-</div>
+                        <div class="stat-label">Quantidade Total</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="avg-quantity">-</div>
+                        <div class="stat-label">Média por Registro</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="unique-models">-</div>
+                        <div class="stat-label">Modelos Únicos</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>📋 Opções de Exportação</h2>
+                <div class="export-options">
+                    <div class="export-card">
+                        <h3>📗 Microsoft Excel</h3>
+                        <p>Exporta um arquivo .xlsx que pode ser aberto diretamente no Excel, LibreOffice Calc ou Google Sheets. Mantém formatação e permite fórmulas.</p>
+                        <button class="btn btn-success" onclick="exportToExcel()" id="export-excel-btn-2" disabled>
+                            ⬇️ Baixar Excel
+                        </button>
+                    </div>
+                    <div class="export-card">
+                        <h3>📄 Arquivo CSV</h3>
+                        <p>Formato universal que pode ser importado em qualquer planilha ou sistema. Compatível com Excel, Google Sheets, LibreOffice e bancos de dados.</p>
+                        <button class="btn btn-info" onclick="exportToCSV()" id="export-csv-btn-2" disabled>
+                            ⬇️ Baixar CSV
+                        </button>
+                    </div>
+                    <div class="export-card">
+                        <h3>📋 Google Sheets</h3>
+                        <p>Copie os dados formatados e cole diretamente em uma nova planilha do Google Sheets. Ideal para colaboração online.</p>
+                        <button class="btn btn-primary" onclick="openGoogleSheets()" id="google-sheets-btn" disabled>
+                            🔗 Abrir Google Sheets
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="tutorial-steps">
+                    <h4>🎯 Como usar os dados em uma planilha:</h4>
+                    <ol>
+                        <li><strong>Excel:</strong> Clique em "Baixar Excel" e abra o arquivo no Microsoft Excel</li>
+                        <li><strong>Google Sheets:</strong> Clique em "Abrir Google Sheets", depois cole os dados (Ctrl+V)</li>
+                        <li><strong>LibreOffice:</strong> Baixe o CSV e importe no LibreOffice Calc</li>
+                        <li><strong>Outros sistemas:</strong> Use o formato CSV para máxima compatibilidade</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>📊 Visualização em Planilha</h2>
+                <div class="info-box">
+                    <strong>💡 Dica:</strong> Esta visualização simula como os dados aparecerão em uma planilha real. 
+                    Use os botões acima para exportar e trabalhar com os dados em Excel ou Google Sheets.
+                </div>
+                
+                <div id="data-container">
+                    <div class="loading">Clique em "Carregar Dados" para visualizar a planilha</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentData = [];
+        let currentHeaders = [];
+
+        // URLs dos dados
+        const DATA_SOURCES = {
+            local: 'data/modem-data-local.csv',
+            github: 'https://raw.githubusercontent.com/pastor598/sistema-controle-modems/main/data/modem-data.csv'
+        };
+
+        // Função para carregar dados
+        async function loadData() {
+            try {
+                const source = document.getElementById('data-source').value;
+                const dataUrl = DATA_SOURCES[source];
+                
+                console.log(`🔄 Carregando dados de: ${source}`);
+                
+                document.getElementById('data-container').innerHTML = 
+                    '<div class="loading">Carregando dados...</div>';
+
+                const response = await fetch(dataUrl + '?t=' + Date.now());
+                
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const csvText = await response.text();
+                
+                if (!csvText.trim()) {
+                    throw new Error('Arquivo CSV está vazio');
+                }
+
+                // Processar CSV
+                const lines = csvText.trim().split('\n').filter(line => line.trim());
+                
+                if (lines.length < 2) {
+                    throw new Error('CSV deve ter pelo menos cabeçalho e uma linha de dados');
+                }
+
+                // Processar cabeçalho
+                currentHeaders = parseCSVLine(lines[0]);
+                
+                // Processar dados
+                currentData = lines.slice(1).map((line, index) => {
+                    try {
+                        const values = parseCSVLine(line);
+                        const record = {};
+                        currentHeaders.forEach((header, headerIndex) => {
+                            record[header] = values[headerIndex] || '';
+                        });
+                        return record;
+                    } catch (lineError) {
+                        console.warn(`⚠️ Erro na linha ${index + 2}:`, lineError.message);
+                        return null;
+                    }
+                }).filter(record => record !== null);
+
+                // Exibir dados
+                displaySpreadsheet();
+                updateStats();
+                enableExportButtons();
+
+                console.log('✅ Dados carregados com sucesso!', currentData.length, 'registros');
+
+            } catch (error) {
+                console.error('❌ Erro ao carregar dados:', error);
+                
+                document.getElementById('data-container').innerHTML = 
+                    `<div class="error">❌ Erro ao carregar dados: ${error.message}<br><br>
+                    🔧 <strong>Soluções:</strong><br>
+                    • Tente usar "Dados Locais" se estiver testando localmente<br>
+                    • Execute: <code>node testar-github-dados.js</code> para gerar dados locais<br>
+                    • Verifique se o GitHub Actions executou para dados online</div>`;
+            }
+        }
+
+        // Função para processar linha CSV
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                
+                if (char === '"') {
+                    if (inQuotes && line[i + 1] === '"') {
+                        current += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            
+            result.push(current.trim());
+            return result;
+        }
+
+        // Função para exibir dados como planilha
+        function displaySpreadsheet() {
+            if (!currentData.length) {
+                document.getElementById('data-container').innerHTML = 
+                    '<div class="error">Nenhum dado encontrado</div>';
+                return;
+            }
+
+            // Criar cabeçalho com letras das colunas (A, B, C...)
+            const columnLetters = currentHeaders.map((_, index) => 
+                String.fromCharCode(65 + index)
+            );
+
+            let html = '<div class="spreadsheet-container">';
+            html += '<table class="spreadsheet-table">';
+            
+            // Cabeçalho com letras das colunas
+            html += '<thead><tr>';
+            html += '<th class="col-header"></th>'; // Canto superior esquerdo
+            columnLetters.forEach(letter => {
+                html += `<th class="col-header">${letter}</th>`;
+            });
+            html += '</tr>';
+            
+            // Cabeçalho com nomes dos campos
+            html += '<tr>';
+            html += '<th class="row-number">1</th>';
+            currentHeaders.forEach(header => {
+                html += `<th>${header}</th>`;
+            });
+            html += '</tr></thead>';
+
+            // Dados
+            html += '<tbody>';
+            currentData.forEach((record, rowIndex) => {
+                html += '<tr>';
+                html += `<td class="row-number">${rowIndex + 2}</td>`;
+                currentHeaders.forEach(header => {
+                    let value = record[header] || '';
+                    
+                    // Formatar datas
+                    if (header === 'data' && value) {
+                        try {
+                            value = new Date(value).toLocaleDateString('pt-BR');
+                        } catch (e) {}
+                    } else if (header === 'timestamp' && value) {
+                        try {
+                            value = new Date(value).toLocaleString('pt-BR');
+                        } catch (e) {}
+                    }
+                    
+                    html += `<td title="${value}">${value}</td>`;
+                });
+                html += '</tr>';
+            });
+            html += '</tbody></table></div>';
+
+            document.getElementById('data-container').innerHTML = html;
+        }
+
+        // Função para atualizar estatísticas
+        function updateStats() {
+            const totalRecords = currentData.length;
+            const totalQuantity = currentData.reduce((sum, record) => 
+                sum + (parseInt(record.quantidade) || 0), 0
+            );
+            const avgQuantity = totalRecords > 0 ? 
+                Math.round(totalQuantity / totalRecords * 100) / 100 : 0;
+            const uniqueModels = new Set(currentData.map(record => record.modelo)).size;
+
+            document.getElementById('total-records').textContent = totalRecords;
+            document.getElementById('total-quantity').textContent = totalQuantity;
+            document.getElementById('avg-quantity').textContent = avgQuantity;
+            document.getElementById('unique-models').textContent = uniqueModels;
+        }
+
+        // Função para habilitar botões de exportação
+        function enableExportButtons() {
+            const buttons = [
+                'export-excel-btn', 'export-csv-btn', 'copy-btn',
+                'export-excel-btn-2', 'export-csv-btn-2', 'google-sheets-btn'
+            ];
+            buttons.forEach(id => {
+                const btn = document.getElementById(id);
+                if (btn) btn.disabled = false;
+            });
+        }
+
+        // Função para exportar para Excel
+        function exportToExcel() {
+            if (!currentData.length) {
+                alert('Carregue os dados primeiro!');
+                return;
+            }
+
+            try {
+                // Criar workbook
+                const wb = XLSX.utils.book_new();
+                
+                // Converter dados para formato de planilha
+                const wsData = [currentHeaders];
+                currentData.forEach(record => {
+                    const row = currentHeaders.map(header => record[header] || '');
+                    wsData.push(row);
+                });
+                
+                // Criar worksheet
+                const ws = XLSX.utils.aoa_to_sheet(wsData);
+                
+                // Adicionar worksheet ao workbook
+                XLSX.utils.book_append_sheet(wb, ws, "Dados dos Modems");
+                
+                // Gerar nome do arquivo
+                const today = new Date().toISOString().split('T')[0];
+                const filename = `modem-data-${today}.xlsx`;
+                
+                // Salvar arquivo
+                XLSX.writeFile(wb, filename);
+                
+                console.log('✅ Arquivo Excel exportado:', filename);
+                showSuccessMessage(`✅ Arquivo Excel salvo como: <strong>${filename}</strong>`);
+                
+            } catch (error) {
+                console.error('❌ Erro ao exportar Excel:', error);
+                alert('Erro ao exportar para Excel: ' + error.message);
+            }
+        }
+
+        // Função para exportar para CSV
+        function exportToCSV() {
+            if (!currentData.length) {
+                alert('Carregue os dados primeiro!');
+                return;
+            }
+
+            try {
+                // Converter para CSV
+                const csvContent = [currentHeaders.join(',')];
+                currentData.forEach(record => {
+                    const row = currentHeaders.map(header => {
+                        let value = record[header] || '';
+                        // Escapar aspas e vírgulas
+                        if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+                            value = `"${value.replace(/"/g, '""')}"`;
+                        }
+                        return value;
+                    });
+                    csvContent.push(row.join(','));
+                });
+
+                // Criar blob e download
+                const blob = new Blob([csvContent.join('\n')], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const today = new Date().toISOString().split('T')[0];
+                const filename = `modem-data-${today}.csv`;
+                
+                link.href = URL.createObjectURL(blob);
+                link.download = filename;
+                link.click();
+                
+                console.log('✅ Arquivo CSV exportado:', filename);
+                showSuccessMessage(`✅ Arquivo CSV salvo como: <strong>${filename}</strong>`);
+                
+            } catch (error) {
+                console.error('❌ Erro ao exportar CSV:', error);
+                alert('Erro ao exportar para CSV: ' + error.message);
+            }
+        }
+
+        // Função para copiar dados para clipboard
+        function copyToClipboard() {
+            if (!currentData.length) {
+                alert('Carregue os dados primeiro!');
+                return;
+            }
+
+            try {
+                // Criar texto formatado para planilha (separado por tabs)
+                const clipboardData = [currentHeaders.join('\t')];
+                currentData.forEach(record => {
+                    const row = currentHeaders.map(header => record[header] || '');
+                    clipboardData.push(row.join('\t'));
+                });
+
+                // Copiar para clipboard
+                navigator.clipboard.writeText(clipboardData.join('\n')).then(() => {
+                    showSuccessMessage('✅ Dados copiados! Cole em uma planilha (Ctrl+V)');
+                }).catch(err => {
+                    console.error('Erro ao copiar:', err);
+                    // Fallback para navegadores mais antigos
+                    const textArea = document.createElement('textarea');
+                    textArea.value = clipboardData.join('\n');
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    showSuccessMessage('✅ Dados copiados! Cole em uma planilha (Ctrl+V)');
+                });
+                
+            } catch (error) {
+                console.error('❌ Erro ao copiar dados:', error);
+                alert('Erro ao copiar dados: ' + error.message);
+            }
+        }
+
+        // Função para abrir Google Sheets
+        function openGoogleSheets() {
+            copyToClipboard();
+            // Abrir Google Sheets em nova aba
+            window.open('https://sheets.google.com/create', '_blank');
+            
+            setTimeout(() => {
+                showSuccessMessage('📋 Dados copiados! Cole na planilha que abriu (Ctrl+V)');
+            }, 1000);
+        }
+
+        // Função para mostrar mensagem de sucesso
+        function showSuccessMessage(message) {
+            const successMsg = document.createElement('div');
+            successMsg.className = 'success';
+            successMsg.innerHTML = message;
+            document.querySelector('.content').insertBefore(successMsg, document.querySelector('.section'));
+            
+            setTimeout(() => successMsg.remove(), 5000);
+        }
+
+        // Carregar dados automaticamente ao iniciar
+        document.addEventListener('DOMContentLoaded', () => {
+            // Tentar carregar dados locais primeiro
+            loadData();
+        });
+    </script>
+</body>
+</html> 

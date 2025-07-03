@@ -1,0 +1,27 @@
+{
+  "name": "sistema-controle-modems",
+  "version": "1.0.0",
+  "description": "Sistema completo de controle de gravação de modems com integração Google Sheets e GitHub",
+  "main": "index.html",
+  "scripts": {
+    "start": "echo 'Abra index.html no navegador'",
+    "test": "echo 'Testes executados via GitHub Actions'"
+  },
+  "keywords": [
+    "modem",
+    "controle",
+    "gravação",
+    "dashboard",
+    "google-sheets",
+    "github-actions"
+  ],
+  "author": "ModemControl Pro",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pastor598/sistema-controle-modems.git"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+} 

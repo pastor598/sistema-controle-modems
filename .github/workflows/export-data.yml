@@ -35,73 +35,106 @@ jobs:
         fetch-depth: 0
         token: ${{ secrets.GITHUB_TOKEN }}
         
-    - name: 🚀 Generate and export data
+    - name: 🧹 Remove any Node.js artifacts
+      shell: bash
+      run: |
+        # Remove qualquer arquivo que possa causar detecção automática
+        rm -f package.json package-lock.json yarn.lock pnpm-lock.yaml node_modules/.package-lock.json
+        rm -rf node_modules
+        rm -f .nvmrc .node-version
+        echo "🧹 Limpeza de artefatos Node.js concluída"
+        
+    - name: 🚀 Generate and export data using pure bash
       id: export
       shell: bash
       run: |
+        set -e
+        
         # Criar diretório de dados
         mkdir -p data
         
         # Configurações
         FORCE_UPDATE="${{ github.event.inputs.force_update || 'false' }}"
         
-        # Gerar dados de exemplo
+        # Gerar dados usando comandos básicos do sistema
         TODAY=$(date '+%Y-%m-%d')
         TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
-        NUM_RECORDS=$((RANDOM % 6 + 3))
         
-        # Arrays de dados
-        MODELOS=("Motorola SB6141" "ARRIS SB8200" "Huawei EG8145V5" "Nokia G-1425G-B" "TP-Link Archer C80")
-        FABRICANTES=("Motorola" "ARRIS" "Huawei" "Nokia" "TP-Link")
+        # Função para gerar número aleatório
+        random_number() {
+          echo $((RANDOM % $1 + 1))
+        }
+        
+        # Arrays de dados (usando índices simples)
+        declare -a MODELOS=("Motorola SB6141" "ARRIS SB8200" "Huawei EG8145V5" "Nokia G-1425G-B" "TP-Link Archer C80")
+        declare -a FABRICANTES=("Motorola" "ARRIS" "Huawei" "Nokia" "TP-Link")
         
         # Gerar novos dados
+        NUM_RECORDS=$(random_number 6)
         NEW_DATA=""
+        
         for ((i=1; i<=NUM_RECORDS; i++)); do
-          ID=$(( $(date +%s) + i ))
-          IDX=$((RANDOM % ${#MODELOS[@]}))
-          QUANTIDADE=$((RANDOM % 20 + 1))
+          ID=$(date +%s)$i
+          IDX=$((RANDOM % 5))
+          QUANTIDADE=$(random_number 20)
           OBS="Gravação padrão"
           
-          NEW_DATA="${NEW_DATA}${ID},${TODAY},${MODELOS[$IDX]},${FABRICANTES[$IDX]},${QUANTIDADE},${OBS},${TIMESTAMP}"$'\n'
+          if [ -z "$NEW_DATA" ]; then
+            NEW_DATA="${ID},${TODAY},${MODELOS[$IDX]},${FABRICANTES[$IDX]},${QUANTIDADE},${OBS},${TIMESTAMP}"
+          else
+            NEW_DATA="${NEW_DATA}\n${ID},${TODAY},${MODELOS[$IDX]},${FABRICANTES[$IDX]},${QUANTIDADE},${OBS},${TIMESTAMP}"
+          fi
         done
         
         # Ler dados existentes
         CSV_PATH="data/modem-data.csv"
         EXISTING_DATA=""
         
-        if [[ -f "$CSV_PATH" ]]; then
-          EXISTING_DATA=$(tail -n +2 "$CSV_PATH" 2>/dev/null || true)
+        if [ -f "$CSV_PATH" ]; then
+          EXISTING_DATA=$(tail -n +2 "$CSV_PATH" 2>/dev/null | head -n 997 || true)
         fi
         
-        # Combinar dados (manter últimos 1000 registros)
-        ALL_DATA=$(echo -e "${EXISTING_DATA}\n${NEW_DATA}" | head -n 1000)
+        # Combinar dados
+        if [ -n "$EXISTING_DATA" ] && [ -n "$NEW_DATA" ]; then
+          ALL_DATA="${EXISTING_DATA}\n${NEW_DATA}"
+        elif [ -n "$NEW_DATA" ]; then
+          ALL_DATA="$NEW_DATA"
+        else
+          ALL_DATA="$EXISTING_DATA"
+        fi
         
         # Criar CSV
         HEADERS="id,data,modelo,fabricante,quantidade,observacoes,timestamp"
-        CSV_CONTENT="${HEADERS}"$'\n'"${ALL_DATA}"
+        CSV_CONTENT="${HEADERS}\n${ALL_DATA}"
         
         # Verificar mudanças
         HAS_CHANGES=false
-        if [[ ! -f "$CSV_PATH" ]] || [[ "$(cat "$CSV_PATH")" != "$CSV_CONTENT" ]] || [[ "$FORCE_UPDATE" == "true" ]]; then
+        if [ ! -f "$CSV_PATH" ] || [ "$(cat "$CSV_PATH" 2>/dev/null)" != "$(echo -e "$CSV_CONTENT")" ] || [ "$FORCE_UPDATE" = "true" ]; then
           HAS_CHANGES=true
         fi
         
-        if [[ "$HAS_CHANGES" == "true" ]]; then
+        if [ "$HAS_CHANGES" = "true" ]; then
           # Salvar CSV
-          echo "$CSV_CONTENT" > "$CSV_PATH"
+          echo -e "$CSV_CONTENT" > "$CSV_PATH"
           
-          # Criar metadata simples
-          RECORD_COUNT=$(echo "$CSV_CONTENT" | wc -l)
+          # Contar registros
+          RECORD_COUNT=$(echo -e "$CSV_CONTENT" | wc -l)
           RECORD_COUNT=$((RECORD_COUNT - 1))
           
-          echo "{\"lastUpdate\":\"$TIMESTAMP\",\"recordCount\":$RECORD_COUNT,\"newRecordsAdded\":$NUM_RECORDS,\"version\":\"4.0\",\"source\":\"GitHub Actions Bash\"}" > "data/metadata.json"
+          # Criar metadata usando printf para evitar problemas de escape
+          printf '{"lastUpdate":"%s","recordCount":%d,"newRecordsAdded":%d,"version":"5.0","source":"GitHub Actions Pure Bash"}' \
+            "$TIMESTAMP" "$RECORD_COUNT" "$NUM_RECORDS" > "data/metadata.json"
+          
+          # Calcular tamanho do arquivo
+          FILE_SIZE=$(wc -c < "$CSV_PATH")
+          FILE_SIZE_KB=$(echo "scale=2; $FILE_SIZE / 1024" | bc -l 2>/dev/null || echo "0")
           
           # Outputs
           echo "records-count=$RECORD_COUNT" >> $GITHUB_OUTPUT
-          echo "file-size=$(echo "$CSV_CONTENT" | wc -c | awk '{printf "%.2f", $1/1024}')" >> $GITHUB_OUTPUT
+          echo "file-size=$FILE_SIZE_KB" >> $GITHUB_OUTPUT
           echo "status=updated" >> $GITHUB_OUTPUT
           
-          echo "✅ Dados atualizados com sucesso"
+          echo "✅ Dados atualizados com sucesso - $RECORD_COUNT registros"
         else
           echo "status=no-changes" >> $GITHUB_OUTPUT
           echo "ℹ️ Nenhuma mudança detectada"
@@ -111,16 +144,17 @@ jobs:
       if: always()
       shell: bash
       run: |
-        echo "## 📊 Export Summary" >> $GITHUB_STEP_SUMMARY
-        echo "- **Status**: ${{ steps.export.outputs.export-status }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Records**: ${{ steps.export.outputs.records-count }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **File Size**: ${{ steps.export.outputs.file-size }} KB" >> $GITHUB_STEP_SUMMARY
-        echo "- **Timestamp**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
-        
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 🔗 Links Úteis" >> $GITHUB_STEP_SUMMARY
-        echo "- [📄 CSV Atual](https://raw.githubusercontent.com/${{ github.repository }}/main/data/modem-data.csv)" >> $GITHUB_STEP_SUMMARY
-        echo "- [📋 Metadata](https://raw.githubusercontent.com/${{ github.repository }}/main/data/metadata.json)" >> $GITHUB_STEP_SUMMARY
+        {
+          echo "## 📊 Export Summary"
+          echo "- **Status**: ${{ steps.export.outputs.export-status }}"
+          echo "- **Records**: ${{ steps.export.outputs.records-count }}"
+          echo "- **File Size**: ${{ steps.export.outputs.file-size }} KB"
+          echo "- **Timestamp**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo ""
+          echo "### 🔗 Links Úteis"
+          echo "- [📄 CSV Atual](https://raw.githubusercontent.com/${{ github.repository }}/main/data/modem-data.csv)"
+          echo "- [📋 Metadata](https://raw.githubusercontent.com/${{ github.repository }}/main/data/metadata.json)"
+        } >> $GITHUB_STEP_SUMMARY
         
     - name: 🔄 Commit and push changes
       if: steps.export.outputs.export-status == 'updated'

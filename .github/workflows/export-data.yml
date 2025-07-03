@@ -17,9 +17,6 @@ on:
       - 'data/**'
       - '.github/workflows/export-data.yml'
 
-env:
-  DATA_DIR: 'data'
-
 jobs:
   export-data:
     name: 🚀 Export & Sync Data
@@ -38,50 +35,50 @@ jobs:
         fetch-depth: 0
         token: ${{ secrets.GITHUB_TOKEN }}
         
-    - name: 📁 Create directories
-      run: mkdir -p ${{ env.DATA_DIR }}
-        
     - name: 🚀 Generate and export data
       id: export
+      shell: bash
       run: |
-        DATA_DIR="${{ env.DATA_DIR }}"
+        # Criar diretório de dados
+        mkdir -p data
+        
+        # Configurações
         FORCE_UPDATE="${{ github.event.inputs.force_update || 'false' }}"
         
         # Gerar dados de exemplo
-        generate_data() {
-          local today=$(date '+%Y-%m-%d')
-          local timestamp=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
-          local num_records=$((RANDOM % 6 + 3))
+        TODAY=$(date '+%Y-%m-%d')
+        TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+        NUM_RECORDS=$((RANDOM % 6 + 3))
+        
+        # Arrays de dados
+        MODELOS=("Motorola SB6141" "ARRIS SB8200" "Huawei EG8145V5" "Nokia G-1425G-B" "TP-Link Archer C80")
+        FABRICANTES=("Motorola" "ARRIS" "Huawei" "Nokia" "TP-Link")
+        
+        # Gerar novos dados
+        NEW_DATA=""
+        for ((i=1; i<=NUM_RECORDS; i++)); do
+          ID=$(( $(date +%s) + i ))
+          IDX=$((RANDOM % ${#MODELOS[@]}))
+          QUANTIDADE=$((RANDOM % 20 + 1))
+          OBS="Gravação padrão"
           
-          for ((i=1; i<=num_records; i++)); do
-            local id=$(( $(date +%s) + i ))
-            local modelos=("Motorola SB6141" "ARRIS SB8200" "Huawei EG8145V5" "Nokia G-1425G-B" "TP-Link Archer C80")
-            local fabricantes=("Motorola" "ARRIS" "Huawei" "Nokia" "TP-Link")
-            local idx=$((RANDOM % ${#modelos[@]}))
-            local quantidade=$((RANDOM % 20 + 1))
-            local obs="Gravação padrão"
-            
-            echo "$id,$today,${modelos[$idx]},${fabricantes[$idx]},$quantidade,$obs,$timestamp"
-          done
-        }
+          NEW_DATA="${NEW_DATA}${ID},${TODAY},${MODELOS[$IDX]},${FABRICANTES[$IDX]},${QUANTIDADE},${OBS},${TIMESTAMP}"$'\n'
+        done
         
         # Ler dados existentes
-        CSV_PATH="$DATA_DIR/modem-data.csv"
+        CSV_PATH="data/modem-data.csv"
         EXISTING_DATA=""
         
         if [[ -f "$CSV_PATH" ]]; then
           EXISTING_DATA=$(tail -n +2 "$CSV_PATH" 2>/dev/null || true)
         fi
         
-        # Gerar novos dados
-        NEW_DATA=$(generate_data)
-        
-        # Combinar dados
-        ALL_DATA=$(echo -e "${EXISTING_DATA}\n${NEW_DATA}" | tail -n 1000)
+        # Combinar dados (manter últimos 1000 registros)
+        ALL_DATA=$(echo -e "${EXISTING_DATA}\n${NEW_DATA}" | head -n 1000)
         
         # Criar CSV
         HEADERS="id,data,modelo,fabricante,quantidade,observacoes,timestamp"
-        CSV_CONTENT=$(echo -e "${HEADERS}\n${ALL_DATA}")
+        CSV_CONTENT="${HEADERS}"$'\n'"${ALL_DATA}"
         
         # Verificar mudanças
         HAS_CHANGES=false
@@ -97,7 +94,7 @@ jobs:
           RECORD_COUNT=$(echo "$CSV_CONTENT" | wc -l)
           RECORD_COUNT=$((RECORD_COUNT - 1))
           
-          echo '{"lastUpdate":"'$(date -u '+%Y-%m-%dT%H:%M:%SZ')'","recordCount":'$RECORD_COUNT',"newRecordsAdded":'$(echo "$NEW_DATA" | wc -l)',"version":"3.0","source":"GitHub Actions Bash"}' > "$DATA_DIR/metadata.json"
+          echo "{\"lastUpdate\":\"$TIMESTAMP\",\"recordCount\":$RECORD_COUNT,\"newRecordsAdded\":$NUM_RECORDS,\"version\":\"4.0\",\"source\":\"GitHub Actions Bash\"}" > "data/metadata.json"
           
           # Outputs
           echo "records-count=$RECORD_COUNT" >> $GITHUB_OUTPUT
@@ -112,6 +109,7 @@ jobs:
         
     - name: 📈 Generate summary report
       if: always()
+      shell: bash
       run: |
         echo "## 📊 Export Summary" >> $GITHUB_STEP_SUMMARY
         echo "- **Status**: ${{ steps.export.outputs.export-status }}" >> $GITHUB_STEP_SUMMARY
@@ -126,6 +124,7 @@ jobs:
         
     - name: 🔄 Commit and push changes
       if: steps.export.outputs.export-status == 'updated'
+      shell: bash
       run: |
         git config --local user.email "actions@github.com"
         git config --local user.name "GitHub Actions Bot"

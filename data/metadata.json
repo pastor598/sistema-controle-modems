@@ -1,1 +1,9 @@
-{"lastUpdate":"2025-07-03T02:21:59Z","recordCount":30,"fileSize":1191,"version":"5.2-permissions","source":"Alpine Container with Permissions","gitSha":"0a339c79eee8f99a8279178b2a5ef5f6a90358c3"}
+{
+  "lastUpdate": "2025-07-03T02:27:22Z",
+  "recordCount": 30,
+  "fileSize": 1222,
+  "version": "6.0-fixed",
+  "source": "Ubuntu Latest - Python Generation",
+  "gitSha": "89f0cabe5ae56a3c4c38aa0377416ef1a83145fe",
+  "workflow": "Fixed Exit Code 1 Issues"
+}

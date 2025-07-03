@@ -349,29 +349,6 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
-    - name: 📤 Export to Google Sheets (Optional)
-      if: steps.export.outputs.export-status == 'updated' && (github.event.inputs.export_to_sheets == 'true' || github.event_name == 'schedule')
-      uses: jroehl/gsheet.action@v2.1.1
-      with:
-        spreadsheetId: ${{ secrets.GOOGLE_SHEET_ID }}
-        commands: |
-          [
-            {
-              "command": "updateData",
-              "args": {
-                "data": "${{ env.CSV_DATA }}",
-                "worksheetTitle": "ModemData",
-                "minRow": 1,
-                "minCol": 1,
-                "valueInputOption": "RAW"
-              }
-            }
-          ]
-      env:
-        GSHEET_CLIENT_EMAIL: ${{ secrets.GSHEET_CLIENT_EMAIL }}
-        GSHEET_PRIVATE_KEY: ${{ secrets.GSHEET_PRIVATE_KEY }}
-        CSV_DATA: ${{ steps.prepare-sheets-data.outputs.data }}
-        
     - name: 🎯 Prepare data for Google Sheets
       id: prepare-sheets-data
       if: steps.export.outputs.export-status == 'updated'
@@ -386,6 +363,28 @@ jobs:
             console.log('::set-output name=data::' + JSON.stringify(data));
           "
         fi
+
+    - name: 📤 Export to Google Sheets (Optional)
+      if: steps.export.outputs.export-status == 'updated' && (github.event.inputs.export_to_sheets == 'true' || github.event_name == 'schedule')
+      uses: jroehl/gsheet.action@v2.1.1
+      with:
+        spreadsheetId: ${{ secrets.GOOGLE_SHEET_ID }}
+        commands: |
+          [
+            {
+              "command": "updateData",
+              "args": {
+                "data": "${{ steps.prepare-sheets-data.outputs.data }}",
+                "worksheetTitle": "ModemData",
+                "minRow": 1,
+                "minCol": 1,
+                "valueInputOption": "RAW"
+              }
+            }
+          ]
+      env:
+        GSHEET_CLIENT_EMAIL: ${{ secrets.GSHEET_CLIENT_EMAIL }}
+        GSHEET_PRIVATE_KEY: ${{ secrets.GSHEET_PRIVATE_KEY }}
         
     - name: 🚨 Notify on failure
       if: failure()

@@ -20,7 +20,10 @@ on:
 jobs:
   export-data:
     name: 🚀 Export & Sync Data
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
+    container:
+      image: alpine:3.18
+      options: --user root
     timeout-minutes: 10
     
     outputs:
@@ -29,73 +32,88 @@ jobs:
       export-status: ${{ steps.export.outputs.status }}
     
     steps:
-    - name: 📂 Manual checkout to avoid detection
+    - name: 🔧 Setup environment
+      shell: sh
+      run: |
+        set -e
+        echo "🔧 Configurando ambiente Alpine Linux"
+        
+        # Instalar apenas ferramentas básicas necessárias
+        apk add --no-cache git bash curl
+        
+        # Configurar git global
+        git config --global user.email "action@github.com"
+        git config --global user.name "GitHub Action"
+        git config --global --add safe.directory '*'
+        
+        echo "✅ Ambiente configurado com sucesso"
+    
+    - name: 📂 Clone repository
       shell: bash
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         set -e
-        echo "🔧 Fazendo checkout manual para evitar detecção automática"
+        echo "📂 Clonando repositório..."
         
-        # Clonar repositório manualmente
-        git clone https://x-access-token:$GITHUB_TOKEN@github.com/${{ github.repository }}.git .
+        # Clone direto sem usar actions
+        git clone https://x-access-token:$GITHUB_TOKEN@github.com/${{ github.repository }}.git /workspace
+        cd /workspace
         git checkout ${{ github.sha }}
         
-        # Remover IMEDIATAMENTE qualquer arquivo que possa causar detecção
-        rm -rf .git/hooks
-        rm -f package.json package-lock.json yarn.lock pnpm-lock.yaml
-        rm -rf node_modules .npm .yarn .pnpm
+        # Garantir que não há nenhum arquivo que possa causar detecção
+        rm -rf node_modules .npm .yarn .pnpm package*.json yarn.lock pnpm-lock.yaml
         rm -f .nvmrc .node-version .yarnrc .npmrc
         
-        echo "✅ Checkout manual concluído sem detecção de dependências"
+        echo "✅ Repositório clonado com sucesso"
     
-    - name: 📊 Generate and export data
+    - name: 📊 Generate data
       id: export
       shell: bash
+      working-directory: /workspace
       run: |
         set -e
         
-        # Criar diretório de dados
-        mkdir -p data
-        
         echo "📊 Gerando dados de modems..."
         
-        # Criar CSV com header
+        # Criar diretório se não existir
+        mkdir -p data
+        
+        # Criar header do CSV
         echo "Data,Modelo,Fabricante,Quantidade,Observacoes,Tempo_Gravacao_Min" > data/modem-data.csv
         
-        # Gerar dados dos últimos 30 dias
-        for i in {0..29}; do
+        # Gerar dados simples
+        for i in $(seq 0 29); do
           date_str=$(date -d "$i days ago" '+%Y-%m-%d' 2>/dev/null || date '+%Y-%m-%d')
           
-          models=("EG8145V5" "EG8145X6" "G-1425G-B" "G-140W-C" "HG8145V5")
-          manufacturers=("Huawei" "Nokia" "TP-Link" "Fiberhome" "Datacom")
+          case $((i % 5)) in
+            0) model="EG8145V5"; manufacturer="Huawei" ;;
+            1) model="EG8145X6"; manufacturer="Huawei" ;;
+            2) model="G-1425G-B"; manufacturer="Nokia" ;;
+            3) model="G-140W-C"; manufacturer="Nokia" ;;
+            *) model="HG8145V5"; manufacturer="TP-Link" ;;
+          esac
           
-          num_records=$((RANDOM % 3 + 1))
+          quantity=$((10 + (i % 15)))
+          time_min=$((3 + (i % 5)))
           
-          for j in $(seq 1 $num_records); do
-            model_idx=$((RANDOM % 5))
-            mfg_idx=$((RANDOM % 5))
-            model=${models[$model_idx]}
-            manufacturer=${manufacturers[$mfg_idx]}
-            quantity=$((RANDOM % 20 + 1))
-            time_min=$((RANDOM % 5 + 3))
-            
+          if [ $((i % 4)) -eq 0 ]; then
+            observations="Lote prioritário"
+          else
             observations=""
-            if [ $((RANDOM % 4)) -eq 0 ]; then
-              observations="Lote prioritário"
-            fi
-            
-            echo "$date_str,$model,$manufacturer,$quantity,$observations,$time_min" >> data/modem-data.csv
-          done
+          fi
+          
+          echo "$date_str,$model,$manufacturer,$quantity,$observations,$time_min" >> data/modem-data.csv
         done
         
-        # Contar registros e tamanho
-        record_count=$(tail -n +2 data/modem-data.csv | wc -l)
+        # Contar registros
+        record_count=$(wc -l < data/modem-data.csv)
+        record_count=$((record_count - 1))
         file_size=$(wc -c < data/modem-data.csv)
         
-        # Criar metadata
+        # Criar metadata JSON simples
         timestamp=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
-        echo "{\"lastUpdate\":\"$timestamp\",\"recordCount\":$record_count,\"fileSize\":$file_size,\"version\":\"4.0\",\"source\":\"Manual Checkout\"}" > data/metadata.json
+        echo "{\"lastUpdate\":\"$timestamp\",\"recordCount\":$record_count,\"fileSize\":$file_size,\"version\":\"5.0-alpine\",\"source\":\"Alpine Container\"}" > data/metadata.json
         
         # Outputs
         echo "records-count=$record_count" >> $GITHUB_OUTPUT
@@ -104,38 +122,35 @@ jobs:
         
         echo "✅ Dados gerados: $record_count registros ($file_size bytes)"
     
-    - name: 💾 Manual commit and push
+    - name: 💾 Commit and push
       shell: bash
+      working-directory: /workspace
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         set -e
         
-        # Configurar git
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
-        
         # Verificar se há mudanças
-        if git diff --quiet data/ 2>/dev/null; then
-          echo "📋 Nenhuma mudança detectada nos dados"
-          exit 0
+        if ! git diff --quiet data/ 2>/dev/null; then
+          echo "📝 Commitando mudanças..."
+          
+          git add data/
+          git commit -m "📊 Dados atualizados via Alpine container - $(date -u '+%Y-%m-%d %H:%M:%S UTC') [skip ci]"
+          
+          # Push
+          git push https://x-access-token:$GITHUB_TOKEN@github.com/${{ github.repository }}.git HEAD:${{ github.ref_name }}
+          
+          echo "✅ Dados sincronizados com sucesso"
+        else
+          echo "📋 Nenhuma mudança detectada"
         fi
-        
-        # Adicionar e fazer commit
-        git add data/
-        git commit -m "📊 Atualizar dados de modems - $(date -u '+%Y-%m-%d %H:%M:%S UTC') [skip ci]"
-        
-        # Push manual
-        git push https://x-access-token:$GITHUB_TOKEN@github.com/${{ github.repository }}.git HEAD:${{ github.ref_name }}
-        
-        echo "✅ Dados sincronizados com sucesso"
     
     - name: 📋 Summary
       shell: bash
       run: |
-        echo "## 📊 Resumo da Execução" >> $GITHUB_STEP_SUMMARY
+        echo "## 📊 Resumo da Execução Alpine" >> $GITHUB_STEP_SUMMARY
         echo "- **Registros processados:** ${{ steps.export.outputs.records-count }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Tamanho do arquivo:** ${{ steps.export.outputs.file-size }} bytes" >> $GITHUB_STEP_SUMMARY
         echo "- **Status:** ✅ Sucesso" >> $GITHUB_STEP_SUMMARY
-        echo "- **Método:** Manual checkout (sem detecção automática)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Método:** Alpine Linux Container (zero detecção de dependências)" >> $GITHUB_STEP_SUMMARY
         echo "- **Timestamp:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY 

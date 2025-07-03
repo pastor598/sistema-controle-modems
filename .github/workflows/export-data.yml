@@ -20,7 +20,7 @@ on:
 jobs:
   export-data:
     name: 🚀 Export & Sync Data
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     timeout-minutes: 10
     
     outputs:
@@ -30,148 +30,112 @@ jobs:
     
     steps:
     - name: 📂 Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v3
       with:
-        fetch-depth: 0
+        fetch-depth: 1
         token: ${{ secrets.GITHUB_TOKEN }}
-        
-    - name: 🧹 Remove any Node.js artifacts
-      shell: bash
-      run: |
-        # Remove qualquer arquivo que possa causar detecção automática
-        rm -f package.json package-lock.json yarn.lock pnpm-lock.yaml node_modules/.package-lock.json
-        rm -rf node_modules
-        rm -f .nvmrc .node-version
-        echo "🧹 Limpeza de artefatos Node.js concluída"
-        
-    - name: 🚀 Generate and export data using pure bash
-      id: export
+    
+    - name: 🧹 Prevent Node.js detection
       shell: bash
       run: |
         set -e
+        echo "🧹 Removendo qualquer indicação de projeto Node.js"
+        rm -f package.json package-lock.json yarn.lock pnpm-lock.yaml
+        rm -rf node_modules .npm .yarn
+        rm -f .nvmrc .node-version
+        echo "✅ Ambiente limpo de dependências Node.js"
+    
+    - name: 📊 Generate and export data
+      id: export
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        set -e
         
-        # Criar diretório de dados
+        # Criar diretório de dados se não existir
         mkdir -p data
         
-        # Configurações
-        FORCE_UPDATE="${{ github.event.inputs.force_update || 'false' }}"
+        # Gerar dados realistas de modems
+        echo "📊 Gerando dados de modems..."
         
-        # Gerar dados usando comandos básicos do sistema
-        TODAY=$(date '+%Y-%m-%d')
-        TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+        # Criar CSV com header
+        echo "Data,Modelo,Fabricante,Quantidade,Observacoes,Tempo_Gravacao_Min" > data/modem-data.csv
         
-        # Função para gerar número aleatório
-        random_number() {
-          echo $((RANDOM % $1 + 1))
-        }
-        
-        # Arrays de dados (usando índices simples)
-        declare -a MODELOS=("Motorola SB6141" "ARRIS SB8200" "Huawei EG8145V5" "Nokia G-1425G-B" "TP-Link Archer C80")
-        declare -a FABRICANTES=("Motorola" "ARRIS" "Huawei" "Nokia" "TP-Link")
-        
-        # Gerar novos dados
-        NUM_RECORDS=$(random_number 6)
-        NEW_DATA=""
-        
-        for ((i=1; i<=NUM_RECORDS; i++)); do
-          ID=$(date +%s)$i
-          IDX=$((RANDOM % 5))
-          QUANTIDADE=$(random_number 20)
-          OBS="Gravação padrão"
+        # Gerar dados dos últimos 30 dias
+        for i in {0..29}; do
+          date_str=$(date -d "$i days ago" '+%Y-%m-%d' 2>/dev/null || date '+%Y-%m-%d')
           
-          if [ -z "$NEW_DATA" ]; then
-            NEW_DATA="${ID},${TODAY},${MODELOS[$IDX]},${FABRICANTES[$IDX]},${QUANTIDADE},${OBS},${TIMESTAMP}"
-          else
-            NEW_DATA="${NEW_DATA}\n${ID},${TODAY},${MODELOS[$IDX]},${FABRICANTES[$IDX]},${QUANTIDADE},${OBS},${TIMESTAMP}"
-          fi
+          # Arrays de modelos e fabricantes
+          models=("EG8145V5" "EG8145X6" "G-1425G-B" "G-140W-C" "HG8145V5")
+          manufacturers=("Huawei" "Nokia" "TP-Link" "Fiberhome" "Datacom")
+          
+          # Gerar 1-3 registros por dia
+          num_records=$((RANDOM % 3 + 1))
+          
+          for j in $(seq 1 $num_records); do
+            model_idx=$((RANDOM % 5))
+            mfg_idx=$((RANDOM % 5))
+            model=${models[$model_idx]}
+            manufacturer=${manufacturers[$mfg_idx]}
+            quantity=$((RANDOM % 20 + 1))
+            time_min=$((RANDOM % 5 + 3))
+            
+            observations=""
+            if [ $((RANDOM % 4)) -eq 0 ]; then
+              observations="Lote prioritário"
+            fi
+            
+            echo "$date_str,$model,$manufacturer,$quantity,$observations,$time_min" >> data/modem-data.csv
+          done
         done
         
-        # Ler dados existentes
-        CSV_PATH="data/modem-data.csv"
-        EXISTING_DATA=""
+        # Contar registros e tamanho
+        record_count=$(tail -n +2 data/modem-data.csv | wc -l)
+        file_size=$(wc -c < data/modem-data.csv)
         
-        if [ -f "$CSV_PATH" ]; then
-          EXISTING_DATA=$(tail -n +2 "$CSV_PATH" 2>/dev/null | head -n 997 || true)
-        fi
+        # Criar metadata
+        timestamp=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+        echo "{\"lastUpdate\":\"$timestamp\",\"recordCount\":$record_count,\"fileSize\":$file_size,\"version\":\"3.0\",\"source\":\"GitHub Actions\"}" > data/metadata.json
         
-        # Combinar dados
-        if [ -n "$EXISTING_DATA" ] && [ -n "$NEW_DATA" ]; then
-          ALL_DATA="${EXISTING_DATA}\n${NEW_DATA}"
-        elif [ -n "$NEW_DATA" ]; then
-          ALL_DATA="$NEW_DATA"
-        else
-          ALL_DATA="$EXISTING_DATA"
-        fi
+        # Outputs
+        echo "records-count=$record_count" >> $GITHUB_OUTPUT
+        echo "file-size=$file_size" >> $GITHUB_OUTPUT
+        echo "status=success" >> $GITHUB_OUTPUT
         
-        # Criar CSV
-        HEADERS="id,data,modelo,fabricante,quantidade,observacoes,timestamp"
-        CSV_CONTENT="${HEADERS}\n${ALL_DATA}"
-        
-        # Verificar mudanças
-        HAS_CHANGES=false
-        if [ ! -f "$CSV_PATH" ] || [ "$(cat "$CSV_PATH" 2>/dev/null)" != "$(echo -e "$CSV_CONTENT")" ] || [ "$FORCE_UPDATE" = "true" ]; then
-          HAS_CHANGES=true
-        fi
-        
-        if [ "$HAS_CHANGES" = "true" ]; then
-          # Salvar CSV
-          echo -e "$CSV_CONTENT" > "$CSV_PATH"
-          
-          # Contar registros
-          RECORD_COUNT=$(echo -e "$CSV_CONTENT" | wc -l)
-          RECORD_COUNT=$((RECORD_COUNT - 1))
-          
-          # Criar metadata usando printf para evitar problemas de escape
-          printf '{"lastUpdate":"%s","recordCount":%d,"newRecordsAdded":%d,"version":"5.0","source":"GitHub Actions Pure Bash"}' \
-            "$TIMESTAMP" "$RECORD_COUNT" "$NUM_RECORDS" > "data/metadata.json"
-          
-          # Calcular tamanho do arquivo
-          FILE_SIZE=$(wc -c < "$CSV_PATH")
-          FILE_SIZE_KB=$(echo "scale=2; $FILE_SIZE / 1024" | bc -l 2>/dev/null || echo "0")
-          
-          # Outputs
-          echo "records-count=$RECORD_COUNT" >> $GITHUB_OUTPUT
-          echo "file-size=$FILE_SIZE_KB" >> $GITHUB_OUTPUT
-          echo "status=updated" >> $GITHUB_OUTPUT
-          
-          echo "✅ Dados atualizados com sucesso - $RECORD_COUNT registros"
-        else
-          echo "status=no-changes" >> $GITHUB_OUTPUT
-          echo "ℹ️ Nenhuma mudança detectada"
-        fi
-        
-    - name: 📈 Generate summary report
-      if: always()
+        echo "✅ Dados gerados: $record_count registros ($file_size bytes)"
+    
+    - name: 💾 Commit and push changes
       shell: bash
-      run: |
-        {
-          echo "## 📊 Export Summary"
-          echo "- **Status**: ${{ steps.export.outputs.export-status }}"
-          echo "- **Records**: ${{ steps.export.outputs.records-count }}"
-          echo "- **File Size**: ${{ steps.export.outputs.file-size }} KB"
-          echo "- **Timestamp**: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-          echo ""
-          echo "### 🔗 Links Úteis"
-          echo "- [📄 CSV Atual](https://raw.githubusercontent.com/${{ github.repository }}/main/data/modem-data.csv)"
-          echo "- [📋 Metadata](https://raw.githubusercontent.com/${{ github.repository }}/main/data/metadata.json)"
-        } >> $GITHUB_STEP_SUMMARY
-        
-    - name: 🔄 Commit and push changes
-      if: steps.export.outputs.export-status == 'updated'
-      shell: bash
-      run: |
-        git config --local user.email "actions@github.com"
-        git config --local user.name "GitHub Actions Bot"
-        git config --local core.autocrlf false
-        
-        git add data/
-        
-        if git diff --staged --quiet; then
-          echo "Nenhuma mudança para commit"
-        else
-          git commit -m "🔄 Dados atualizados automaticamente - Registros: ${{ steps.export.outputs.records-count }} - Workflow: #${{ github.run_number }} [skip ci]"
-          git push
-          echo "✅ Mudanças commitadas e enviadas"
-        fi
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        set -e
+        
+        # Configurar git
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # Verificar se há mudanças
+        if git diff --quiet data/; then
+          echo "📋 Nenhuma mudança detectada nos dados"
+          exit 0
+        fi
+        
+        # Adicionar e fazer commit
+        git add data/
+        git commit -m "📊 Atualizar dados de modems - $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+        
+        # Push
+        git push
+        
+        echo "✅ Dados sincronizados com sucesso"
+    
+    - name: 📋 Summary
+      shell: bash
+      run: |
+        echo "## 📊 Resumo da Execução" >> $GITHUB_STEP_SUMMARY
+        echo "- **Registros processados:** ${{ steps.export.outputs.records-count }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Tamanho do arquivo:** ${{ steps.export.outputs.file-size }} bytes" >> $GITHUB_STEP_SUMMARY
+        echo "- **Status:** ✅ Sucesso" >> $GITHUB_STEP_SUMMARY
+        echo "- **Timestamp:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY 
